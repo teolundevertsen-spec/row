@@ -1104,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'health',
-    syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1', 'caffeine_log_v1'],
+    syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1'],
     syncedPrefixes: ['stack:taken:'],
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });
@@ -1122,7 +1122,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const el = document.getElementById('caffeineQuickTotal');
     if (!el) return;
     let log = [];
-    try { log = JSON.parse(localStorage.getItem('caffeine_log_v1')) || []; } catch (e) {}
+    try { log = JSON.parse(localStorage.getItem('caf:logs')) || []; } catch (e) {}
     const today = todayKeyLocal();
     const total = log.filter(e => e && e.dateKey === today).reduce((s, e) => s + (e.mg || 0), 0);
     el.textContent = Math.round(total);

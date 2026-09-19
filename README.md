@@ -17,7 +17,7 @@ Open any `.html` file directly in your browser — no build step, no install.
 | [index.html](index.html) | Bento grid hub — the home page, links out to every tracker |
 | [main.html](main.html) | Goals tracker (Day Ring, Goal Ticker, To Do list) |
 | [health.html](health.html) | Supplement / daily stack tracker |
-| [caffeine.html](caffeine.html) | Caffeine tracker — searchable drink database, peak/comedown/clearance estimates, daily limit bar |
+| [caffeine.html](caffeine.html) | Predictive energy-curve caffeine tracker — searchable drink DB, WHOOP-aware energy model, smart timing tips |
 | [po-water.html](po-water.html) | Water intake tracker |
 | [finance.html](finance.html) | Finances |
 | [gym.html](gym.html) | Progressive overload gym tracker |
@@ -92,6 +92,14 @@ It uses the unofficial [`garminconnect`](https://pypi.org/project/garminconnect/
 3. **Scheduling**: Vercel's free Hobby plan only allows cron jobs to run once a day, so [.github/workflows/garmin-sync.yml](.github/workflows/garmin-sync.yml) runs it hourly instead, via GitHub Actions hitting the same endpoint. Add a repository secret (GitHub repo → Settings → Secrets and variables → Actions → New repository secret) named `CRON_SECRET` with the same value as the Vercel one. You can also trigger it manually anytime from the repo's Actions tab ("Garmin hourly sync" → Run workflow), or with `curl -L -H "Authorization: Bearer <your CRON_SECRET>" https://<your-app>.vercel.app/api/garmin-sync`.
 
 **Note on credentials:** never put your Garmin email/password (or the Supabase service_role key) anywhere in this repo — Vercel env vars are the only place they should live. The function deliberately re-logs-in to Garmin every run instead of caching a session token in Supabase, to avoid adding another sensitive value to persist and protect.
+
+## WHOOP integration (optional)
+
+[caffeine.html](caffeine.html)'s energy-curve model can use your actual wake/bedtime and recovery score from WHOOP instead of the defaults (wake 7:00, bedtime 23:00) — this is entirely optional and degrades gracefully: with no WHOOP tokens present, the page just uses the defaults.
+
+- The page reads a `whoop_tokens_v1` localStorage key (`{access_token, refresh_token}`) and calls [api/whoop-data.py](api/whoop-data.py) for `/v2/recovery` and `/v2/activity/sleep`, refreshing through [api/whoop-refresh.py](api/whoop-refresh.py) on a 401.
+- This repo doesn't include a "Connect WHOOP" OAuth flow yet — nothing populates `whoop_tokens_v1` on its own. To wire that up you'd register an app at [developer.whoop.com](https://developer.whoop.com), add a login button that redirects through WHOOP's OAuth authorize URL with the `offline` scope, and on the callback exchange the code for tokens (via `https://api.prod.whoop.com/oauth/oauth2/token`) and save the result into `whoop_tokens_v1`.
+- `api/whoop-refresh.py` needs `WHOOP_CLIENT_ID` / `WHOOP_CLIENT_SECRET` as Vercel env vars (from your WHOOP developer app) — **never** put the client secret in any client-side file. `api/whoop-data.py` needs no secrets of its own; it just forwards your own access token to WHOOP's API to avoid a browser-side CORS/credential-exposure issue.
 
 ## Building from scratch
 

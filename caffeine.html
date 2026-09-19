@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050506">
-<title>Caffeine · Dashboard</title>
+<title>Caffeine</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="lock.js"></script>
@@ -19,7 +19,7 @@
   --success: #6BE3A4;
   --warning: #F2C063;
   --danger: #FF6B6B;
-  --accent: #C9A14A;
+  --accent: #C9A36B;
   --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -90,14 +90,62 @@ body::after {
   box-shadow: 0 12px 40px rgba(0,0,0,0.45);
   overflow: hidden;
 }
+
+/* ===== Your Day ===== */
+.day-header { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
+.day-ring-wrap { position: relative; width: 108px; height: 108px; flex-shrink: 0; }
+.day-ring { width: 108px; height: 108px; transform: rotate(0deg); }
+.day-ring-track { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 9; }
+.day-ring-fill {
+  fill: none; stroke: var(--success); stroke-width: 9; stroke-linecap: round;
+  transform-origin: 60px 60px; transform: rotate(-90deg);
+  transition: stroke-dashoffset 0.5s ease, stroke 0.4s ease;
+}
+.day-ring-fill.amber { stroke: var(--warning); }
+.day-ring-fill.red { stroke: var(--danger); }
+.day-ring-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.day-ring-num { font-size: 30px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; }
+.day-ring-state { margin-top: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.day-header-info { flex: 1; min-width: 0; }
+.day-header-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+.day-header-hint { font-size: 12px; color: var(--text-tertiary); }
+
+.chart-toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.chart-toggle-btn {
+  border: 0; background: transparent; color: var(--text-tertiary);
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 6px 12px; border-radius: 7px; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.chart-toggle-btn.is-active { background: rgba(255,255,255,0.10); color: var(--text-primary); }
+
+.energy-chart-wrap { position: relative; touch-action: pan-y; cursor: crosshair; }
+#energyChart { display: block; width: 100%; height: 180px; }
+.energy-chart-axis { display: flex; justify-content: space-between; margin-top: 4px; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-tertiary); }
+
+.day-footer-band { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); }
+.day-footer-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 4px; }
+.day-footer-val { font-size: 13px; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+
+/* ===== Smart Timing ===== */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.stat { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; }
+.stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; }
+.stat-num { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+.timing-sub { margin-top: 4px; font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
+
+.tips-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.tips-list li { display: flex; gap: 10px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
+.tips-list li::before { content: '·'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+
+/* ===== Today ===== */
 .gm-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
-.gm-header-left { display: flex; flex-direction: column; }
 .gm-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; }
 .gm-progress-row { display: flex; align-items: baseline; gap: 6px; }
 .gm-progress-num { font-size: 42px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.045em; color: var(--text-primary); line-height: 1; }
 .gm-progress-total { font-family: var(--font-mono); font-size: 18px; color: var(--text-tertiary); }
 .gm-progress-label { font-size: 11px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-tertiary); margin-left: 4px; }
-
 .gm-streak {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 12px; border-radius: 999px;
@@ -107,7 +155,6 @@ body::after {
 .gm-streak.ok   { color: var(--success); border-color: rgba(107,227,164,0.25); background: rgba(107,227,164,0.06); }
 .gm-streak.warn { color: var(--warning); border-color: rgba(242,192,99,0.28); background: rgba(242,192,99,0.06); }
 .gm-streak.over { color: var(--danger);  border-color: rgba(255,107,107,0.28); background: rgba(255,107,107,0.07); }
-
 .cf-bar-track { position: relative; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; margin-top: 4px; }
 .cf-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--success), #8FEFC1); transition: width 0.4s ease, background 0.4s ease; }
 .cf-bar-fill.warn { background: linear-gradient(90deg, var(--warning), #FFD98A); }
@@ -115,13 +162,9 @@ body::after {
 .cf-bar-limit-note { margin-top: 8px; font-size: 11.5px; color: var(--text-tertiary); }
 .cf-bar-limit-note.warn { color: var(--warning); }
 .cf-bar-limit-note.over { color: var(--danger); }
+.cf-active-row { display: flex; gap: 12px; margin-top: 14px; }
 
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
-.stat { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; }
-.stat-num { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1.15; }
-.stat-label { margin-top: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
-
-/* Search */
+/* ===== Log a Drink ===== */
 .cf-search-wrap { position: relative; }
 .gm-input {
   width: 100%; padding: 11px 14px;
@@ -141,15 +184,16 @@ body::after {
 }
 .cf-result-group { padding: 8px 12px 2px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); }
 .cf-result {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  display: flex; align-items: center; gap: 10px;
   width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer;
   padding: 10px 12px; color: var(--text-primary); font-family: inherit; font-size: 13.5px;
 }
 .cf-result:hover, .cf-result:focus-visible { background: rgba(255,255,255,0.06); }
+.cf-result-emoji { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.cf-result-name { flex: 1; }
 .cf-result-mg { font-family: var(--font-mono); font-size: 12px; color: var(--text-tertiary); flex-shrink: 0; }
 .cf-results-empty { padding: 14px 12px; font-size: 12.5px; color: var(--text-tertiary); text-align: center; }
 
-/* Confirm-log mini panel */
 .cf-confirm { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); display: none; }
 .cf-confirm.is-open { display: block; }
 .cf-confirm-name { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
@@ -163,7 +207,6 @@ body::after {
 .cf-time-input { width: 110px; font-family: inherit; }
 .cf-confirm-actions { display: flex; gap: 8px; margin-left: auto; margin-top: 18px; }
 
-/* Buttons */
 .gm-add {
   padding: 11px 20px; border: 0; border-radius: 12px;
   background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
@@ -181,46 +224,33 @@ body::after {
 }
 .gm-ghost:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); }
 
-/* Custom drink toggle + form */
 .cf-custom-toggle { margin-top: 14px; border: 0; background: transparent; color: var(--text-tertiary); font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px 2px; }
 .cf-custom-toggle:hover { color: var(--text-primary); }
 .cf-custom-form { display: none; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
 .cf-custom-form.is-open { display: flex; }
 .cf-custom-form .gm-input { width: auto; flex: 1; min-width: 140px; }
 
-/* Chart */
-.cf-chart-wrap { position: relative; }
-canvas#cfChart { display: block; width: 100%; height: 160px; }
-.cf-chart-empty { padding: 30px 0; text-align: center; font-size: 12.5px; font-style: italic; color: var(--text-tertiary); }
-.cf-chart-legend { display: flex; gap: 16px; margin-top: 10px; font-size: 11px; color: var(--text-tertiary); }
-.cf-chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.cf-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-
-/* Log list */
+/* ===== Logged Today ===== */
 .goal-list { list-style: none; margin: 0; padding: 0; }
 .empty-state { text-align: center; font-size: 12px; font-style: italic; color: var(--text-tertiary); padding: 14px 0; }
 .gm-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 6px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; }
 .gm-row-time { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-tertiary); width: 48px; flex-shrink: 0; }
 .gm-row-body { flex: 1; min-width: 0; }
 .gm-row-name { font-size: 13.5px; color: var(--text-primary); font-weight: 600; }
-.gm-row-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.gm-row-meta { font-size: 10.5px; color: var(--text-tertiary); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
 .gm-row-mg { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text-primary); flex-shrink: 0; }
-.gm-row-high { color: var(--warning); }
 .goal-delete { border: 0; background: transparent; color: var(--text-tertiary); font-size: 18px; cursor: pointer; padding: 0 4px; opacity: 0.5; transition: opacity 0.2s, color 0.2s; }
 .gm-row:hover .goal-delete { opacity: 1; }
 .goal-delete:hover { color: var(--danger); }
-
-/* Settings */
-.cf-settings-grid { display: flex; gap: 10px; flex-wrap: wrap; }
-.cf-settings-field { display: flex; flex-direction: column; gap: 4px; }
-.cf-settings-field label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
-.cf-note { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11.5px; line-height: 1.55; color: var(--text-tertiary); }
-.cf-note strong { color: var(--text-secondary); }
 
 @media (max-width: 480px) {
   body { padding: max(20px, env(safe-area-inset-top)) 14px 50px; }
   .gm-card { padding: 16px; }
   .gm-progress-num { font-size: 36px; }
+  .day-header { gap: 12px; }
+  .day-ring-wrap { width: 88px; height: 88px; }
+  .day-ring { width: 88px; height: 88px; }
+  .day-footer-band { grid-template-columns: 1fr; gap: 12px; }
   .cf-confirm-actions { margin-left: 0; width: 100%; }
 }
 </style>
@@ -229,14 +259,81 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
 <div class="page">
 
   <h1 class="dash-title">Caffeine</h1>
-  <p class="dash-sub">Peak / comedown / clearance estimates — not medical advice.</p>
+  <p class="dash-sub">Predictive energy curve — not medical advice.</p>
+
+  <!-- ===== Your Day ===== -->
+  <div class="section">
+    <div class="section-title">Your Day</div>
+    <div class="gm-card">
+      <div class="day-header">
+        <div class="day-ring-wrap">
+          <svg class="day-ring" viewBox="0 0 120 120">
+            <circle class="day-ring-track" cx="60" cy="60" r="52"></circle>
+            <circle class="day-ring-fill" id="dayRingFill" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="day-ring-center">
+            <div class="day-ring-num" id="dayRingNum">—</div>
+            <div class="day-ring-state" id="dayRingState">—</div>
+          </div>
+        </div>
+        <div class="day-header-info">
+          <div class="day-header-label" id="dayHeaderLabel">RIGHT NOW</div>
+          <div class="day-header-hint">Hover or drag the curve to explore your day</div>
+        </div>
+      </div>
+
+      <div class="chart-toggle" role="tablist">
+        <button type="button" class="chart-toggle-btn is-active" data-mode="line">LINE</button>
+        <button type="button" class="chart-toggle-btn" data-mode="bars">BARS</button>
+        <button type="button" class="chart-toggle-btn" data-mode="stack">STACK</button>
+      </div>
+
+      <div class="energy-chart-wrap" id="energyChartWrap">
+        <svg id="energyChart" viewBox="0 0 720 220" preserveAspectRatio="none"></svg>
+        <div class="energy-chart-axis">
+          <span>12A</span><span>3A</span><span>6A</span><span>9A</span><span>12P</span><span>3P</span><span>6P</span><span>9P</span><span>12A</span>
+        </div>
+      </div>
+
+      <div class="day-footer-band">
+        <div><div class="day-footer-label">Peak focus window</div><div class="day-footer-val" id="footerPeak">—</div></div>
+        <div><div class="day-footer-label">Predicted crash</div><div class="day-footer-val" id="footerCrash">—</div></div>
+        <div><div class="day-footer-label">Last coffee by</div><div class="day-footer-val" id="footerCutoff">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Smart Timing ===== -->
+  <div class="section">
+    <div class="section-title">Smart Timing</div>
+    <div class="stat-grid" style="margin-bottom:14px">
+      <div class="stat">
+        <div class="stat-label">Most Productive</div>
+        <div class="stat-num" id="timingProductive">—</div>
+        <div class="timing-sub" id="timingProductiveSub">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">You'll Crash</div>
+        <div class="stat-num" id="timingCrash">—</div>
+        <div class="timing-sub" id="timingCrashSub">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Coffee Cutoff</div>
+        <div class="stat-num" id="timingCutoff">—</div>
+        <div class="timing-sub" id="timingCutoffSub">—</div>
+      </div>
+    </div>
+    <div class="gm-card">
+      <ul class="tips-list" id="tipsList"></ul>
+    </div>
+  </div>
 
   <!-- ===== Today ===== -->
   <div class="section">
     <div class="section-title">Today</div>
     <div class="gm-card">
       <div class="gm-header">
-        <div class="gm-header-left">
+        <div>
           <div class="gm-eyebrow">Consumed today</div>
           <div class="gm-progress-row">
             <span class="gm-progress-num" id="cfTodayTotal">0</span>
@@ -246,15 +343,11 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
         </div>
         <span class="gm-streak ok" id="cfStreak">🟢 Under limit</span>
       </div>
-
       <div class="cf-bar-track"><div class="cf-bar-fill" id="cfBarFill" style="width:0%"></div></div>
-      <div class="cf-bar-limit-note" id="cfBarNote">General safe-limit guidance for healthy adults is ~400 mg/day.</div>
-
-      <div class="stat-grid" style="margin-top:16px">
-        <div class="stat"><div class="stat-num" id="cfActiveNow">0 mg</div><div class="stat-label">Active Now</div></div>
-        <div class="stat"><div class="stat-num" id="cfDosesToday">0</div><div class="stat-label">Doses Today</div></div>
-        <div class="stat"><div class="stat-num" id="cfPeaksAt">—</div><div class="stat-label">Peaks At</div></div>
-        <div class="stat"><div class="stat-num" id="cfClearedBy">—</div><div class="stat-label">Fully Cleared By</div></div>
+      <div class="cf-bar-limit-note" id="cfBarNote">—</div>
+      <div class="cf-active-row">
+        <div class="stat" style="flex:1"><div class="stat-label">Active Now</div><div class="stat-num" id="cfActiveNow">0 mg</div></div>
+        <div class="stat" style="flex:1"><div class="stat-label">Doses Today</div><div class="stat-num" id="cfDosesToday">0</div></div>
       </div>
     </div>
   </div>
@@ -301,55 +394,11 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
     </div>
   </div>
 
-  <!-- ===== In your system ===== -->
+  <!-- ===== Logged today ===== -->
   <div class="section">
-    <div class="section-title">In Your System</div>
-    <div class="gm-card">
-      <div class="cf-chart-wrap">
-        <canvas id="cfChart" width="640" height="160"></canvas>
-        <div class="cf-chart-empty" id="cfChartEmpty">Log a drink to see your caffeine curve.</div>
-      </div>
-      <div class="cf-chart-legend">
-        <span><span class="cf-dot" style="background:var(--accent)"></span>mg active in system</span>
-        <span><span class="cf-dot" style="background:var(--text-tertiary)"></span>now</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== Today's log ===== -->
-  <div class="section">
-    <div class="section-title">Today's Log</div>
+    <div class="section-title">Logged Today</div>
     <div class="gm-card">
       <ul class="goal-list" id="cfLogList"></ul>
-    </div>
-  </div>
-
-  <!-- ===== Settings ===== -->
-  <div class="section">
-    <div class="section-title">Settings</div>
-    <div class="gm-card">
-      <div class="cf-settings-grid">
-        <div class="cf-settings-field">
-          <label for="cfSetHalfLife">Half-life (hrs)</label>
-          <input class="cf-num-input" id="cfSetHalfLife" type="number" min="1" max="12" step="0.5">
-        </div>
-        <div class="cf-settings-field">
-          <label for="cfSetLimit">Daily limit (mg)</label>
-          <input class="cf-num-input" id="cfSetLimit" type="number" min="0" step="10">
-        </div>
-        <div class="cf-settings-field">
-          <label for="cfSetPeak">Peak delay (min)</label>
-          <input class="cf-num-input" id="cfSetPeak" type="number" min="10" max="120" step="5">
-        </div>
-        <div class="cf-settings-field" style="justify-content:flex-end">
-          <button class="gm-ghost" id="cfSetSave" type="button">Save</button>
-        </div>
-      </div>
-      <div class="cf-note">
-        Average half-life is ~5 hrs but ranges 1.5–9.5 hrs depending on the person (smoking roughly halves it, pregnancy can more than double it) — adjust above if you know yours runs faster or slower. Peak blood concentration is typically reached 30–60 min after drinking. "Fully cleared" uses 5 half-lives (~97% eliminated), the standard pharmacology convention. Your daily total also updates the Water Tracker's caffeine estimate automatically.
-        <br><br>
-        <strong>Garmin epix Pro sync:</strong> resting HR, body battery and sleep now flow in once a day via a scheduled sync job — see the Vitals card on the Health page.
-      </div>
     </div>
   </div>
 
@@ -360,17 +409,19 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
   'use strict';
 
   // ---------------------------------------------------------------
-  // Beverage database (typical per-serving mg; adjust at log time
-  // for your actual size). Sourced from Mayo Clinic / FDA / brand
-  // nutrition data — treat as estimates, not lab measurements.
+  // Beverage database (typical per-serving mg; adjust at log time).
+  // Sourced from Mayo Clinic / FDA / brand nutrition data.
   // ---------------------------------------------------------------
   var CAFFEINE_DB = [
-    { cat: 'Coffee', items: [
+    { cat: 'Coffee', emoji: '☕', items: [
       { name: 'Drip Coffee (8 oz)', mg: 95 },
       { name: 'Drip Coffee (12 oz)', mg: 140 },
       { name: 'Cold Brew (12 oz)', mg: 200 },
       { name: 'Espresso (single shot)', mg: 63 },
       { name: 'Espresso (double shot)', mg: 125 },
+      { name: 'Cappuccino (8 oz)', mg: 75 },
+      { name: 'Latte (12 oz)', mg: 95 },
+      { name: 'Flat White (8 oz)', mg: 130 },
       { name: 'Instant Coffee (8 oz)', mg: 62 },
       { name: 'Decaf Coffee (8 oz)', mg: 3 },
       { name: 'Starbucks Pike Place (Grande)', mg: 310 },
@@ -379,9 +430,10 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
       { name: 'Starbucks Cold Brew (Grande)', mg: 205 },
       { name: 'Starbucks Nitro Cold Brew (Grande)', mg: 280 },
       { name: "Dunkin' Original Blend (Medium)", mg: 210 },
-      { name: "McDonald's Coffee (Medium)", mg: 145 }
+      { name: "McDonald's Coffee (Medium)", mg: 145 },
+      { name: 'Iced Coffee (12 oz, generic)', mg: 145 }
     ]},
-    { cat: 'Tea', items: [
+    { cat: 'Tea', emoji: '🍵', items: [
       { name: 'Black Tea (8 oz)', mg: 47 },
       { name: 'Green Tea (8 oz)', mg: 28 },
       { name: 'White Tea (8 oz)', mg: 15 },
@@ -389,9 +441,10 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
       { name: 'Matcha (8 oz)', mg: 70 },
       { name: 'Chai Latte (8 oz)', mg: 40 },
       { name: 'Yerba Mate (8 oz)', mg: 85 },
-      { name: 'Bottled Iced Tea (8 oz)', mg: 19 }
+      { name: 'Bottled Iced Tea (8 oz)', mg: 19 },
+      { name: 'Kombucha (8 oz)', mg: 15 }
     ]},
-    { cat: 'Energy Drinks', items: [
+    { cat: 'Energy Drinks', emoji: '⚡', items: [
       { name: 'Red Bull (8.4 oz)', mg: 80 },
       { name: 'Red Bull (12 oz)', mg: 114 },
       { name: 'Monster Energy (16 oz)', mg: 160 },
@@ -404,33 +457,44 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
       { name: 'C4 Performance Energy (16 oz)', mg: 200 },
       { name: 'C4 Ultimate Energy (16 oz)', mg: 300 },
       { name: '5-Hour Energy (shot)', mg: 200 },
-      { name: 'Bloom Sparkling Energy (12 oz)', mg: 150 }
+      { name: 'Bloom Sparkling Energy (12 oz)', mg: 150 },
+      { name: 'Prime Energy (12 oz)', mg: 200 },
+      { name: 'Zoa Energy (16 oz)', mg: 160 }
     ]},
-    { cat: 'Soda', items: [
+    { cat: 'Soda', emoji: '🥤', items: [
       { name: 'Coca-Cola (12 oz)', mg: 34 },
       { name: 'Diet Coke (12 oz)', mg: 46 },
       { name: 'Pepsi (12 oz)', mg: 38 },
       { name: 'Mountain Dew (12 oz)', mg: 54 },
-      { name: 'Dr Pepper (12 oz)', mg: 41 }
+      { name: 'Dr Pepper (12 oz)', mg: 41 },
+      { name: 'Mello Yello (12 oz)', mg: 51 }
     ]},
-    { cat: 'Other', items: [
+    { cat: 'Pre-Workout', emoji: '💪', items: [
+      { name: 'Pre-Workout (avg scoop)', mg: 175 },
+      { name: 'C4 Original (scoop)', mg: 150 },
+      { name: 'Ghost Legend (scoop)', mg: 250 },
+      { name: 'Bucked Up (scoop)', mg: 300 }
+    ]},
+    { cat: 'Other', emoji: '🍫', items: [
       { name: 'Dark Chocolate 70-85% (1 oz)', mg: 24 },
       { name: 'Milk Chocolate (1 oz)', mg: 6 },
       { name: 'Excedrin Migraine (2 tabs)', mg: 130 },
       { name: 'Caffeine Pill (standard)', mg: 200 },
-      { name: 'Caffeine Pill (mini)', mg: 100 },
-      { name: 'Pre-Workout (avg scoop)', mg: 175 }
+      { name: 'Caffeine Pill (mini)', mg: 100 }
     ]}
   ];
 
-  var LOG_KEY = 'caffeine_log_v1';
-  var CUSTOM_KEY = 'caffeine_custom_drinks_v1';
-  var SETTINGS_KEY = 'caffeine_settings_v1';
+  var LOG_KEY = 'caf:logs';
+  var CUSTOM_KEY = 'caf:custom';
   var WATER_KEY = 'po_water_v1';
+  var WHOOP_TOKENS_KEY = 'whoop_tokens_v1';
 
-  var DEFAULT_SETTINGS = { halfLifeHours: 5, dailyLimitMg: 400, peakDelayMinutes: 45 };
+  var HALF_LIFE_H = 5;
+  var PEAK_DELAY_MIN = 45;
+  var DAILY_CEILING_MG = 400;
 
   function $(id) { return document.getElementById(id); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   // --- storage -------------------------------------------------
   function loadLog() {
@@ -441,30 +505,26 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
     try { return JSON.parse(localStorage.getItem(CUSTOM_KEY)) || []; } catch (e) { return []; }
   }
   function saveCustom(list) { localStorage.setItem(CUSTOM_KEY, JSON.stringify(list)); }
-  function loadSettings() {
-    var s = {};
-    try { s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (e) {}
-    return Object.assign({}, DEFAULT_SETTINGS, s);
-  }
-  function saveSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
-
-  var settings = loadSettings();
 
   // --- date/time helpers ----------------------------------------
   function todayKey() {
     var d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
+  function fmtTime12(hourFloat) {
+    var h = Math.floor(((hourFloat % 24) + 24) % 24);
+    var m = Math.round((hourFloat - Math.floor(hourFloat)) * 60);
+    if (m === 60) { m = 0; h = (h + 1) % 24; }
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+  }
   function sameCalendarDay(a, b) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
-  function fmtTime(ms) {
+  function fmtClockMs(ms) {
     var d = new Date(ms);
-    var h = d.getHours(), m = d.getMinutes();
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    var h12 = h % 12; if (h12 === 0) h12 = 12;
-    var timeStr = h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
-
+    var timeStr = fmtTime12(d.getHours() + d.getMinutes() / 60);
     var now = new Date();
     if (sameCalendarDay(d, now)) return timeStr;
     var tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
@@ -475,40 +535,390 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
   function fmtHM(dateObj) {
     return String(dateObj.getHours()).padStart(2, '0') + ':' + String(dateObj.getMinutes()).padStart(2, '0');
   }
+  function nowHourFloat() {
+    var d = new Date();
+    return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+  }
+  function startOfToday() {
+    var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime();
+  }
 
   // --- flattened search list (built-in + custom) -----------------
   function allSearchable() {
     var out = [];
     CAFFEINE_DB.forEach(function (group) {
-      group.items.forEach(function (it) { out.push({ cat: group.cat, name: it.name, mg: it.mg }); });
+      group.items.forEach(function (it) { out.push({ cat: group.cat, emoji: group.emoji, name: it.name, mg: it.mg }); });
     });
-    loadCustom().forEach(function (c) { out.push({ cat: 'Your Drinks', name: c.name, mg: c.mg, custom: true, id: c.id }); });
+    loadCustom().forEach(function (c) { out.push({ cat: 'Your Drinks', emoji: '➕', name: c.name, mg: c.mg, custom: true, id: c.id }); });
     return out;
   }
 
-  // --- pharmacokinetic model --------------------------------------
-  function peakDelayMs() { return settings.peakDelayMinutes * 60000; }
-  function halfLifeMs() { return settings.halfLifeHours * 3600000; }
-
-  function doseAt(entry, nowMs) {
-    var t0 = new Date(entry.time).getTime();
-    if (nowMs <= t0) return 0;
-    var tPeak = t0 + peakDelayMs();
-    if (nowMs <= tPeak) return entry.mg * ((nowMs - t0) / peakDelayMs());
-    var elapsed = nowMs - tPeak;
-    return entry.mg * Math.pow(0.5, elapsed / halfLifeMs());
-  }
-  function peakTimeOf(entry) { return new Date(entry.time).getTime() + peakDelayMs(); }
-  function halfGoneTimeOf(entry) { return peakTimeOf(entry) + halfLifeMs(); }
-  function clearTimeOf(entry) { return peakTimeOf(entry) + 5 * halfLifeMs(); }
-
-  function relevantEntries(nowMs) {
-    // Doses from the last 30h can still have a non-trivial trace.
+  // ---------------------------------------------------------------
+  // Pharmacokinetics: active(dose,t) = dose * 0.5^(hoursSince/5)
+  // ---------------------------------------------------------------
+  function relevantEntries() {
+    var nowMs = Date.now();
     var cutoff = nowMs - 30 * 3600000;
     return loadLog().filter(function (e) { return new Date(e.time).getTime() >= cutoff; });
   }
-  function totalActiveAt(entries, nowMs) {
-    return entries.reduce(function (s, e) { return s + doseAt(e, nowMs); }, 0);
+  function activeAt(entry, atMs) {
+    var t0 = new Date(entry.time).getTime();
+    var hoursSince = (atMs - t0) / 3600000;
+    if (hoursSince < 0) return 0;
+    return entry.mg * Math.pow(0.5, hoursSince / HALF_LIFE_H);
+  }
+  function totalActiveAt(entries, atMs) {
+    return entries.reduce(function (s, e) { return s + activeAt(e, atMs); }, 0);
+  }
+  // hour-of-today (0-24, can be fractional) -> absolute ms today
+  function hourToMs(hour) { return startOfToday() + hour * 3600000; }
+  function totalActiveAtHour(entries, hour) { return totalActiveAt(entries, hourToMs(hour)); }
+
+  function peakTimeOf(entry) { return new Date(entry.time).getTime() + PEAK_DELAY_MIN * 60000; }
+  function halfGoneTimeOf(entry) { return new Date(entry.time).getTime() + HALF_LIFE_H * 3600000; }
+  function clearedTimeOf(entry) {
+    var t0 = new Date(entry.time).getTime();
+    var hours = entry.mg > 10 ? HALF_LIFE_H * Math.log2(entry.mg / 10) : 0;
+    return t0 + hours * 3600000;
+  }
+
+  // ---------------------------------------------------------------
+  // Energy model
+  // ---------------------------------------------------------------
+  var profileWeightKg = null;
+  var whoopCtx = { wake: 7, bedtime: 23, recovery: null };
+
+  function gaussian(x, mu, sd) { var d = (x - mu) / sd; return Math.exp(-0.5 * d * d); }
+  function circadian(t) { return 50 + 18 * Math.cos(2 * Math.PI * (t - 16.5) / 24); }
+  function lunchDip(t) { return 10 * gaussian(t, 14, 1.4); }
+  function morningBump(t, wake) { return 10 * gaussian(t - wake, 1.2, 0.9); }
+  function sleepPressureAt(t, wake) {
+    var hoursAwake = t - wake;
+    if (hoursAwake < 0) hoursAwake += 24;
+    return clamp(hoursAwake, 0, 24) * 1.7;
+  }
+  function caffeineBoost(activeMg) { return 34 * (1 - Math.exp(-activeMg / 110)); }
+  function isAsleep(t, wake, bedtime) {
+    if (wake <= bedtime) return t < wake || t >= bedtime;
+    return t < wake && t >= bedtime;
+  }
+  function energyAt(t, entries, opts) {
+    opts = opts || {};
+    var wake = whoopCtx.wake, bedtime = whoopCtx.bedtime;
+    var activeMg = opts.noCaffeine ? 0 : totalActiveAtHour(entries, t);
+    if (isAsleep(t, wake, bedtime)) {
+      return clamp(circadian(t) - 34, 3, 20);
+    }
+    var e = circadian(t) - lunchDip(t) - sleepPressureAt(t, wake) + morningBump(t, wake) + caffeineBoost(activeMg);
+    return clamp(e, 0, 100);
+  }
+
+  function scoreState(score) {
+    if (score >= 78) return 'Peak';
+    if (score >= 62) return 'High';
+    if (score >= 40) return 'Steady';
+    if (score >= 25) return 'Dip';
+    return 'Low';
+  }
+  function scoreClass(score) {
+    if (score >= 62) return '';
+    if (score >= 40) return 'amber';
+    return 'red';
+  }
+
+  function sampleDay(entries) {
+    var pts = [];
+    for (var i = 0; i <= 144; i++) {
+      var t = i * (24 / 144);
+      pts.push({
+        t: t,
+        total: energyAt(t, entries, {}),
+        base: energyAt(t, entries, { noCaffeine: true })
+      });
+    }
+    return pts;
+  }
+
+  // ---------------------------------------------------------------
+  // Ring + chart rendering
+  // ---------------------------------------------------------------
+  var RING_R = 52, RING_C = 2 * Math.PI * RING_R;
+  var dayPoints = [];
+  var chartMode = 'line';
+  var scrubHour = null; // null = follow live "now"
+
+  function renderRing(score) {
+    var fillEl = $('dayRingFill');
+    var offset = RING_C * (1 - clamp(score, 0, 100) / 100);
+    fillEl.style.strokeDasharray = RING_C;
+    fillEl.style.strokeDashoffset = offset;
+    fillEl.setAttribute('class', 'day-ring-fill ' + scoreClass(score));
+    $('dayRingNum').textContent = Math.round(score);
+    $('dayRingState').textContent = scoreState(score);
+  }
+
+  function valueAtHour(hour) {
+    var idx = clamp(Math.round(hour / (24 / 144)), 0, dayPoints.length - 1);
+    return dayPoints[idx];
+  }
+
+  function updateHeaderForHour(hour) {
+    var isLive = (scrubHour === null);
+    var pt = valueAtHour(hour);
+    renderRing(pt.total);
+    $('dayHeaderLabel').textContent = isLive ? 'RIGHT NOW' : fmtTime12(hour).toUpperCase();
+  }
+
+  function renderChart() {
+    var svg = $('energyChart');
+    var W = 720, H = 220, padTop = 10, padBottom = 14;
+    var plotH = H - padTop - padBottom;
+    var pxPerHour = W / 24;
+
+    function xFor(t) { return t * pxPerHour; }
+    function yFor(v) { return padTop + plotH - (clamp(v, 0, 100) / 100) * plotH; }
+
+    var wake = whoopCtx.wake, bedtime = whoopCtx.bedtime;
+    var nightRects = '';
+    if (wake > 0) nightRects += '<rect x="0" y="0" width="' + xFor(wake) + '" height="' + H + '" fill="rgba(255,255,255,0.025)"></rect>';
+    if (bedtime < 24) nightRects += '<rect x="' + xFor(bedtime) + '" y="0" width="' + (W - xFor(bedtime)) + '" height="' + H + '" fill="rgba(255,255,255,0.025)"></rect>';
+
+    var defs = '<defs>' +
+      '<filter id="cfGlow" x="-50%" y="-50%" width="200%" height="200%">' +
+        '<feGaussianBlur stdDeviation="3.2" result="blur"></feGaussianBlur>' +
+        '<feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>' +
+      '</filter>' +
+      '<linearGradient id="cfAreaGrad" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="' + 'rgba(107,227,164,0.30)' + '"></stop>' +
+        '<stop offset="100%" stop-color="rgba(107,227,164,0.02)"></stop>' +
+      '</linearGradient>' +
+      '<linearGradient id="cfStackGrad" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="rgba(201,163,107,0.55)"></stop>' +
+        '<stop offset="100%" stop-color="rgba(201,163,107,0.08)"></stop>' +
+      '</linearGradient>' +
+      '</defs>';
+
+    var body = '';
+    if (chartMode === 'bars') {
+      var barCount = 48, barW = (W / barCount) * 0.62;
+      for (var i = 0; i < barCount; i++) {
+        var t = (i + 0.5) * (24 / barCount);
+        var pt = valueAtHour(t);
+        var bx = xFor(t) - barW / 2;
+        var by = yFor(pt.total);
+        body += '<rect x="' + bx + '" y="' + by + '" width="' + barW + '" height="' + (H - padBottom - by) + '" rx="2" fill="var(--accent)" opacity="0.75"></rect>';
+      }
+    } else if (chartMode === 'stack') {
+      var baseD = 'M0,' + yFor(dayPoints[0].base);
+      var totalD = 'M0,' + yFor(dayPoints[0].total);
+      dayPoints.forEach(function (p) {
+        baseD += ' L' + xFor(p.t) + ',' + yFor(p.base);
+        totalD += ' L' + xFor(p.t) + ',' + yFor(p.total);
+      });
+      var baseAreaD = baseD + ' L' + W + ',' + (H - padBottom) + ' L0,' + (H - padBottom) + ' Z';
+      var stackAreaD = totalD;
+      for (var j = dayPoints.length - 1; j >= 0; j--) {
+        stackAreaD += ' L' + xFor(dayPoints[j].t) + ',' + yFor(dayPoints[j].base);
+      }
+      stackAreaD += ' Z';
+      body += '<path d="' + baseAreaD + '" fill="url(#cfAreaGrad)"></path>';
+      body += '<path d="' + stackAreaD + '" fill="url(#cfStackGrad)"></path>';
+      body += '<path d="' + totalD + '" fill="none" stroke="var(--accent)" stroke-width="2" filter="url(#cfGlow)"></path>';
+    } else {
+      var lineD = 'M0,' + yFor(dayPoints[0].total);
+      dayPoints.forEach(function (p) { lineD += ' L' + xFor(p.t) + ',' + yFor(p.total); });
+      var areaD = lineD + ' L' + W + ',' + (H - padBottom) + ' L0,' + (H - padBottom) + ' Z';
+      body += '<path d="' + areaD + '" fill="url(#cfAreaGrad)"></path>';
+      body += '<path d="' + lineD + '" fill="none" stroke="var(--success)" stroke-width="2.2" filter="url(#cfGlow)"></path>';
+    }
+
+    var cursorHour = scrubHour !== null ? scrubHour : nowHourFloat();
+    var cursorPt = valueAtHour(cursorHour);
+    var cx = xFor(cursorHour), cy = yFor(cursorPt.total);
+    var cursor = '<line x1="' + cx + '" y1="' + padTop + '" x2="' + cx + '" y2="' + (H - padBottom) + '" stroke="rgba(255,255,255,0.28)" stroke-width="1" stroke-dasharray="3,3"></line>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="4.5" fill="#FAFAFA" stroke="var(--accent)" stroke-width="2"></circle>';
+
+    svg.innerHTML = defs + nightRects + body + cursor;
+  }
+
+  function renderDay() {
+    var entries = relevantEntries();
+    dayPoints = sampleDay(entries);
+    renderChart();
+    var hour = scrubHour !== null ? scrubHour : nowHourFloat();
+    updateHeaderForHour(hour);
+    renderFooterBand();
+    renderSmartTiming();
+  }
+
+  // --- chart interaction: hover/drag to scrub ---------------------
+  function attachChartScrub() {
+    var wrap = $('energyChartWrap');
+    var svg = $('energyChart');
+    function hourFromEvent(clientX) {
+      var rect = svg.getBoundingClientRect();
+      var x = clamp(clientX - rect.left, 0, rect.width);
+      return (x / rect.width) * 24;
+    }
+    function onMove(e) {
+      var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      scrubHour = hourFromEvent(clientX);
+      renderChart();
+      updateHeaderForHour(scrubHour);
+    }
+    function onLeave() {
+      scrubHour = null;
+      renderChart();
+      updateHeaderForHour(nowHourFloat());
+    }
+    wrap.addEventListener('mousemove', onMove);
+    wrap.addEventListener('mouseleave', onLeave);
+    wrap.addEventListener('touchstart', onMove, { passive: true });
+    wrap.addEventListener('touchmove', onMove, { passive: true });
+    wrap.addEventListener('touchend', onLeave);
+  }
+
+  document.querySelectorAll('.chart-toggle-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.chart-toggle-btn').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      chartMode = btn.dataset.mode;
+      renderChart();
+    });
+  });
+
+  // ---------------------------------------------------------------
+  // Footer band + Smart Timing
+  // ---------------------------------------------------------------
+  function findProductiveWindow() {
+    var wakeIdx = 0, bedIdx = dayPoints.length - 1;
+    var best = null;
+    dayPoints.forEach(function (p, i) {
+      if (isAsleep(p.t, whoopCtx.wake, whoopCtx.bedtime)) return;
+      if (!best || p.total > best.total) best = { t: p.t, total: p.total, i: i };
+    });
+    if (!best) return null;
+    var threshold = best.total * 0.9;
+    var startT = best.t, endT = best.t;
+    for (var i = best.i; i >= 0 && dayPoints[i].total >= threshold && !isAsleep(dayPoints[i].t, whoopCtx.wake, whoopCtx.bedtime); i--) startT = dayPoints[i].t;
+    for (var j = best.i; j < dayPoints.length && dayPoints[j].total >= threshold && !isAsleep(dayPoints[j].t, whoopCtx.wake, whoopCtx.bedtime); j++) endT = dayPoints[j].t;
+    return { peakT: best.t, score: best.total, startT: startT, endT: endT };
+  }
+
+  function findCrash() {
+    var now = nowHourFloat();
+    var horizon = Math.min(24, now + 8);
+    var windowH = 1.5; // 90-min sliding window
+    var stepIdx = Math.round(1 / (24 / 144)); // points per hour (approx)
+    var best = null;
+    dayPoints.forEach(function (p, i) {
+      if (p.t < now || p.t > horizon - windowH) return;
+      var endT = p.t + windowH;
+      var endPt = valueAtHour(endT);
+      var drop = p.total - endPt.total;
+      if (!best || drop > best.drop) best = { startT: p.t, endT: endT, drop: drop, low: endPt.total };
+    });
+    if (!best || best.drop < 12) return null;
+    return best;
+  }
+
+  function coffeeCutoffHour() {
+    return whoopCtx.bedtime - HALF_LIFE_H * Math.log2(95 / 30);
+  }
+
+  function renderFooterBand() {
+    var prod = findProductiveWindow();
+    $('footerPeak').textContent = prod ? (fmtTime12(prod.startT) + '–' + fmtTime12(prod.endT)) : '—';
+    var crash = findCrash();
+    $('footerCrash').textContent = crash ? (fmtTime12(crash.startT) + ' · down to ' + Math.round(crash.low)) : 'None predicted';
+    $('footerCutoff').textContent = fmtTime12(coffeeCutoffHour());
+  }
+
+  function renderSmartTiming() {
+    var prod = findProductiveWindow();
+    if (prod) {
+      $('timingProductive').textContent = fmtTime12(prod.peakT);
+      $('timingProductiveSub').textContent = fmtTime12(prod.startT) + '–' + fmtTime12(prod.endT) + ' · score ' + Math.round(prod.score);
+    } else {
+      $('timingProductive').textContent = '—';
+      $('timingProductiveSub').textContent = 'Not enough data yet';
+    }
+
+    var crash = findCrash();
+    if (crash) {
+      $('timingCrash').textContent = fmtTime12(crash.startT);
+      $('timingCrashSub').textContent = 'Drops to ~' + Math.round(crash.low) + ' by ' + fmtTime12(crash.endT);
+    } else {
+      $('timingCrash').textContent = 'None';
+      $('timingCrashSub').textContent = 'No significant crash predicted';
+    }
+
+    var cutoff = coffeeCutoffHour();
+    $('timingCutoff').textContent = fmtTime12(cutoff);
+    $('timingCutoffSub').textContent = 'To stay under 30mg by bedtime (' + fmtTime12(whoopCtx.bedtime) + ')';
+
+    var tips = [];
+    tips.push('Front-load your caffeine earlier in the day — a dose after ' + fmtTime12(whoopCtx.bedtime - 8) + ' is still meaningfully active at bedtime.');
+    tips.push('Cut off caffeine by ' + fmtTime12(cutoff) + ' to protect tonight’s sleep (bedtime ' + fmtTime12(whoopCtx.bedtime) + ').');
+    tips.push('Stay hydrated — caffeine is mildly diuretic, especially at higher doses.');
+    if (crash) tips.push('Beat the ' + fmtTime12(crash.startT) + ' dip with daylight or a short walk instead of another dose.');
+    if (whoopCtx.recovery != null && whoopCtx.recovery < 34) {
+      tips.push('Your WHOOP recovery is low today (' + Math.round(whoopCtx.recovery) + '%) — consider a lower caffeine ceiling and an earlier cutoff.');
+    }
+    $('tipsList').innerHTML = tips.map(function (t) { return '<li>' + t + '</li>'; }).join('');
+  }
+
+  // ---------------------------------------------------------------
+  // Today card (mg total / limit / active now)
+  // ---------------------------------------------------------------
+  function dailyLimitMg() {
+    var base = DAILY_CEILING_MG;
+    if (profileWeightKg) base = Math.min(DAILY_CEILING_MG, Math.round(profileWeightKg * 3));
+    if (whoopCtx.recovery != null) {
+      if (whoopCtx.recovery < 34) return Math.min(base, 200);
+      if (whoopCtx.recovery < 67) return Math.min(base, 300);
+    }
+    return base;
+  }
+
+  function renderToday() {
+    var today = todayKey();
+    var todayEntries = loadLog().filter(function (e) { return e.dateKey === today; });
+    var todayTotal = todayEntries.reduce(function (s, e) { return s + (e.mg || 0); }, 0);
+    var limit = dailyLimitMg();
+
+    $('cfTodayTotal').textContent = Math.round(todayTotal);
+    $('cfTodayLimit').textContent = '/ ' + limit;
+
+    var pct = Math.min(100, (todayTotal / limit) * 100);
+    var barEl = $('cfBarFill'), noteEl = $('cfBarNote'), streakEl = $('cfStreak');
+    barEl.style.width = pct + '%';
+    barEl.className = 'cf-bar-fill';
+    noteEl.className = 'cf-bar-limit-note';
+    streakEl.className = 'gm-streak';
+
+    var noteBase = profileWeightKg
+      ? ('Personalized target ≈ 3 mg/kg (' + Math.round(profileWeightKg) + 'kg) → ' + limit + ' mg/day.')
+      : ('General safe-limit guidance for healthy adults is ~' + limit + ' mg/day.');
+
+    if (todayTotal >= limit) {
+      barEl.classList.add('over'); noteEl.classList.add('over'); streakEl.classList.add('over');
+      streakEl.textContent = '🔴 Over your limit';
+      noteEl.textContent = "You're over today's limit (" + limit + ' mg) — consider stopping for today.';
+    } else if (todayTotal >= limit * 0.75) {
+      barEl.classList.add('warn'); noteEl.classList.add('warn'); streakEl.classList.add('warn');
+      streakEl.textContent = '🟡 Approaching limit';
+      noteEl.textContent = 'Getting close to today’s limit (' + limit + ' mg). ' + noteBase;
+    } else {
+      streakEl.classList.add('ok');
+      streakEl.textContent = '🟢 Under limit';
+      noteEl.textContent = noteBase;
+    }
+
+    var relevant = relevantEntries();
+    var activeNow = totalActiveAt(relevant, Date.now());
+    $('cfActiveNow').textContent = Math.round(activeNow) + ' mg';
+    $('cfDosesToday').textContent = todayEntries.length;
   }
 
   // ---------------------------------------------------------------
@@ -517,6 +927,8 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
   var searchEl = $('cfSearch');
   var resultsEl = $('cfResults');
   var pendingSelection = null;
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 
   function renderResults(query) {
     var q = query.trim().toLowerCase();
@@ -529,8 +941,7 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
       resultsEl.hidden = false;
       return;
     }
-    var byCat = {};
-    var order = [];
+    var byCat = {}, order = [];
     matches.forEach(function (m) {
       if (!byCat[m.cat]) { byCat[m.cat] = []; order.push(m.cat); }
       byCat[m.cat].push(m);
@@ -539,15 +950,13 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
     order.forEach(function (cat) {
       html += '<div class="cf-result-group">' + cat + '</div>';
       byCat[cat].forEach(function (it) {
-        html += '<button type="button" class="cf-result" data-name="' + escapeAttr(it.name) + '" data-mg="' + it.mg + '">' +
-          '<span>' + escapeHtml(it.name) + '</span><span class="cf-result-mg">' + it.mg + ' mg</span></button>';
+        html += '<button type="button" class="cf-result" data-name="' + escapeHtml(it.name) + '" data-mg="' + it.mg + '">' +
+          '<span class="cf-result-emoji">' + it.emoji + '</span><span class="cf-result-name">' + escapeHtml(it.name) + '</span><span class="cf-result-mg">' + it.mg + ' mg</span></button>';
       });
     });
     resultsEl.innerHTML = html;
     resultsEl.hidden = false;
   }
-  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
-  function escapeAttr(s) { return escapeHtml(s); }
 
   searchEl.addEventListener('input', function () { renderResults(searchEl.value); });
   searchEl.addEventListener('focus', function () { if (searchEl.value.trim()) renderResults(searchEl.value); });
@@ -561,7 +970,6 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
     resultsEl.hidden = true;
   });
 
-  // --- confirm-log panel -------------------------------------------
   var confirmEl = $('cfConfirm');
   function openConfirm(name, mg) {
     pendingSelection = { name: name, mg: mg };
@@ -598,12 +1006,9 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
     renderAll();
   });
 
-  // --- custom drink form ---------------------------------------------
   var customToggle = $('cfCustomToggle');
   var customForm = $('cfCustomForm');
-  customToggle.addEventListener('click', function () {
-    customForm.classList.toggle('is-open');
-  });
+  customToggle.addEventListener('click', function () { customForm.classList.toggle('is-open'); });
   $('cfCustomSave').addEventListener('click', function () {
     var name = $('cfCustomName').value.trim();
     var mg = Number($('cfCustomMg').value);
@@ -618,21 +1023,9 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
     openConfirm(entry.name, entry.mg);
   });
 
-  // --- settings ------------------------------------------------------
-  function renderSettings() {
-    $('cfSetHalfLife').value = settings.halfLifeHours;
-    $('cfSetLimit').value = settings.dailyLimitMg;
-    $('cfSetPeak').value = settings.peakDelayMinutes;
-  }
-  $('cfSetSave').addEventListener('click', function () {
-    settings.halfLifeHours = Number($('cfSetHalfLife').value) || DEFAULT_SETTINGS.halfLifeHours;
-    settings.dailyLimitMg = Number($('cfSetLimit').value) || DEFAULT_SETTINGS.dailyLimitMg;
-    settings.peakDelayMinutes = Number($('cfSetPeak').value) || DEFAULT_SETTINGS.peakDelayMinutes;
-    saveSettings(settings);
-    renderAll();
-  });
-
-  // --- log list ---------------------------------------------------
+  // ---------------------------------------------------------------
+  // Logged today list
+  // ---------------------------------------------------------------
   function renderLogList() {
     var listEl = $('cfLogList');
     var today = todayKey();
@@ -648,12 +1041,15 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
       var li = document.createElement('li');
       li.className = 'gm-row';
       var t = new Date(e.time);
-      var clear = clearTimeOf(e);
       li.innerHTML =
-        '<span class="gm-row-time">' + fmtTime(t.getTime()) + '</span>' +
+        '<span class="gm-row-time">' + fmtClockMs(t.getTime()) + '</span>' +
         '<div class="gm-row-body">' +
-          '<div class="gm-row-name">' + escapeHtml(e.name) + (e.mg > 200 ? ' <span class="gm-row-high">⚠</span>' : '') + '</div>' +
-          '<div class="gm-row-meta">Clears by ' + fmtTime(clear) + '</div>' +
+          '<div class="gm-row-name">' + escapeHtml(e.name) + '</div>' +
+          '<div class="gm-row-meta">' +
+            '<span>Peak ' + fmtClockMs(peakTimeOf(e)) + '</span>' +
+            '<span>Half-gone ' + fmtClockMs(halfGoneTimeOf(e)) + '</span>' +
+            '<span>Clear ' + fmtClockMs(clearedTimeOf(e)) + '</span>' +
+          '</div>' +
         '</div>' +
         '<span class="gm-row-mg">' + Math.round(e.mg) + ' mg</span>' +
         '<button class="goal-delete" data-id="' + e.id + '" type="button">×</button>';
@@ -668,165 +1064,100 @@ canvas#cfChart { display: block; width: 100%; height: 160px; }
     renderAll();
   });
 
-  // --- chart --------------------------------------------------------
-  function renderChart() {
-    var canvas = $('cfChart');
-    var emptyEl = $('cfChartEmpty');
-    var ctx = canvas.getContext('2d');
-    var nowMs = Date.now();
-    var entries = relevantEntries(nowMs);
-
-    var dpr = window.devicePixelRatio || 1;
-    var cssW = canvas.clientWidth || 640;
-    var cssH = 160;
-    canvas.width = cssW * dpr; canvas.height = cssH * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cssW, cssH);
-
-    if (entries.length === 0) {
-      canvas.style.display = 'none';
-      emptyEl.style.display = 'block';
-      return;
-    }
-    canvas.style.display = 'block';
-    emptyEl.style.display = 'none';
-
-    var spanStartMs = nowMs - 6 * 3600000;
-    var spanEndMs = nowMs + 24 * 3600000;
-    var stepMs = 15 * 60000;
-    var points = [];
-    var maxVal = 10;
-    for (var t = spanStartMs; t <= spanEndMs; t += stepMs) {
-      var v = totalActiveAt(entries, t);
-      points.push(v);
-      if (v > maxVal) maxVal = v;
-    }
-    maxVal = maxVal * 1.15;
-
-    var padL = 6, padR = 6, padT = 10, padB = 10;
-    var w = cssW - padL - padR, h = cssH - padT - padB;
-    function xFor(i) { return padL + (i / (points.length - 1)) * w; }
-    function yFor(v) { return padT + h - (v / maxVal) * h; }
-
-    // area fill
-    ctx.beginPath();
-    ctx.moveTo(xFor(0), yFor(points[0]));
-    for (var i = 1; i < points.length; i++) ctx.lineTo(xFor(i), yFor(points[i]));
-    ctx.lineTo(xFor(points.length - 1), padT + h);
-    ctx.lineTo(xFor(0), padT + h);
-    ctx.closePath();
-    var grad = ctx.createLinearGradient(0, padT, 0, padT + h);
-    grad.addColorStop(0, 'rgba(201,161,74,0.32)');
-    grad.addColorStop(1, 'rgba(201,161,74,0.02)');
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // line
-    ctx.beginPath();
-    ctx.moveTo(xFor(0), yFor(points[0]));
-    for (var j = 1; j < points.length; j++) ctx.lineTo(xFor(j), yFor(points[j]));
-    ctx.strokeStyle = '#C9A14A';
-    ctx.lineWidth = 2;
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-
-    // "now" marker
-    var nowIdx = (nowMs - spanStartMs) / stepMs;
-    var nx = xFor(nowIdx);
-    ctx.beginPath();
-    ctx.moveTo(nx, padT);
-    ctx.lineTo(nx, padT + h);
-    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+  // ---------------------------------------------------------------
+  // Data sources: body weight + WHOOP (both degrade gracefully)
+  // ---------------------------------------------------------------
+  function loadWeightKg() {
+    try {
+      var w = JSON.parse(localStorage.getItem(WATER_KEY));
+      if (w && w.profile && w.profile.weightKg) {
+        var raw = w.profile.weightKg;
+        return w.weightUnit === 'lb' ? raw / 2.20462 : raw;
+      }
+    } catch (e) {}
+    return null;
   }
 
-  // --- top summary ---------------------------------------------------
-  function renderSummary() {
-    var nowMs = Date.now();
-    var today = todayKey();
-    var allEntries = loadLog();
-    var todayEntries = allEntries.filter(function (e) { return e.dateKey === today; });
-    var todayTotal = todayEntries.reduce(function (s, e) { return s + (e.mg || 0); }, 0);
+  function loadWhoopTokens() {
+    try { return JSON.parse(localStorage.getItem(WHOOP_TOKENS_KEY)); } catch (e) { return null; }
+  }
+  function saveWhoopTokens(t) { try { localStorage.setItem(WHOOP_TOKENS_KEY, JSON.stringify(t)); } catch (e) {} }
 
-    $('cfTodayTotal').textContent = Math.round(todayTotal);
-    $('cfTodayLimit').textContent = '/ ' + settings.dailyLimitMg;
-
-    var pct = Math.min(100, (todayTotal / settings.dailyLimitMg) * 100);
-    var barEl = $('cfBarFill'), noteEl = $('cfBarNote'), streakEl = $('cfStreak');
-    barEl.style.width = pct + '%';
-    barEl.className = 'cf-bar-fill';
-    noteEl.className = 'cf-bar-limit-note';
-    streakEl.className = 'gm-streak';
-
-    if (todayTotal >= settings.dailyLimitMg) {
-      barEl.classList.add('over'); noteEl.classList.add('over'); streakEl.classList.add('over');
-      streakEl.textContent = '🔴 Over your daily limit';
-      noteEl.textContent = "You're over the general safe-limit guidance (" + settings.dailyLimitMg + " mg/day) — consider stopping for today.";
-    } else if (todayTotal >= settings.dailyLimitMg * 0.75) {
-      barEl.classList.add('warn'); noteEl.classList.add('warn'); streakEl.classList.add('warn');
-      streakEl.textContent = '🟡 Approaching limit';
-      noteEl.textContent = "Getting close to the general safe-limit guidance (" + settings.dailyLimitMg + " mg/day).";
-    } else {
-      streakEl.classList.add('ok');
-      streakEl.textContent = '🟢 Under limit';
-      noteEl.textContent = 'General safe-limit guidance for healthy adults is ~' + settings.dailyLimitMg + ' mg/day.';
-    }
-
-    var relevant = relevantEntries(nowMs);
-    var activeNow = totalActiveAt(relevant, nowMs);
-    $('cfActiveNow').textContent = Math.round(activeNow) + ' mg';
-    $('cfDosesToday').textContent = todayEntries.length;
-
-    if (relevant.length === 0) {
-      $('cfPeaksAt').textContent = '—';
-      $('cfClearedBy').textContent = '—';
-    } else {
-      var mostRecent = relevant.reduce(function (a, b) { return new Date(a.time) > new Date(b.time) ? a : b; });
-      var peak = peakTimeOf(mostRecent);
-      var maxClear = Math.max.apply(null, relevant.map(clearTimeOf));
-      $('cfPeaksAt').textContent = peak > nowMs ? fmtTime(peak) : fmtTime(halfGoneTimeOf(mostRecent));
-      $('cfClearedBy').textContent = fmtTime(maxClear);
-    }
+  async function refreshWhoopToken(refreshToken) {
+    try {
+      var res = await fetch('/api/whoop-refresh', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+      if (!res.ok) return null;
+      var data = await res.json();
+      if (!data.access_token) return null;
+      saveWhoopTokens(data);
+      return data;
+    } catch (e) { return null; }
   }
 
-  // --- sync today's total into the water tracker's caffeine field ---
-  function syncToWaterTracker() {
-    var today = todayKey();
-    var total = loadLog().filter(function (e) { return e.dateKey === today; })
-      .reduce(function (s, e) { return s + (e.mg || 0); }, 0);
-    var water = null;
-    try { water = JSON.parse(localStorage.getItem(WATER_KEY)); } catch (e) {}
-    if (!water || typeof water !== 'object') return; // don't create a water profile that doesn't exist yet
-    if (water.caffeineMgPerDay === total) return;
-    water.caffeineMgPerDay = Math.round(total);
-    localStorage.setItem(WATER_KEY, JSON.stringify(water));
+  async function whoopFetch(type) {
+    var tokens = loadWhoopTokens();
+    if (!tokens || !tokens.access_token) return null;
+    try {
+      var res = await fetch('/api/whoop-data?type=' + type, { headers: { Authorization: 'Bearer ' + tokens.access_token } });
+      if (res.status === 401 && tokens.refresh_token) {
+        var refreshed = await refreshWhoopToken(tokens.refresh_token);
+        if (!refreshed) return null;
+        res = await fetch('/api/whoop-data?type=' + type, { headers: { Authorization: 'Bearer ' + refreshed.access_token } });
+      }
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
   }
 
-  // --- render all -----------------------------------------------------
+  async function loadWhoopContext() {
+    var ctx = { wake: 7, bedtime: 23, recovery: null };
+    if (!loadWhoopTokens()) return ctx;
+    try {
+      var results = await Promise.all([whoopFetch('recovery'), whoopFetch('sleep')]);
+      var recoveryData = results[0], sleepData = results[1];
+      if (recoveryData && Array.isArray(recoveryData.records) && recoveryData.records[0]) {
+        var rec = recoveryData.records[0];
+        if (rec.score && typeof rec.score.recovery_score === 'number') ctx.recovery = rec.score.recovery_score;
+      }
+      if (sleepData && Array.isArray(sleepData.records) && sleepData.records[0]) {
+        var sleep = sleepData.records[0];
+        if (sleep.end) { var wd = new Date(sleep.end); ctx.wake = wd.getHours() + wd.getMinutes() / 60; }
+        if (sleep.start) { var bd = new Date(sleep.start); ctx.bedtime = bd.getHours() + bd.getMinutes() / 60; }
+      }
+    } catch (e) {}
+    return ctx;
+  }
+
+  // ---------------------------------------------------------------
+  // Render all + boot
+  // ---------------------------------------------------------------
   function renderAll() {
-    renderSummary();
+    renderToday();
     renderLogList();
-    renderChart();
-    syncToWaterTracker();
+    renderDay();
   }
 
-  renderSettings();
-  renderAll();
-  window.addEventListener('resize', renderChart);
-  window.addEventListener('storage', function () { settings = loadSettings(); renderSettings(); renderAll(); });
-  window.addEventListener('focus', renderAll);
-  setInterval(renderAll, 60 * 1000);
+  async function boot() {
+    profileWeightKg = loadWeightKg();
+    whoopCtx = await loadWhoopContext();
+    attachChartScrub();
+    renderAll();
+    setInterval(function () { if (scrubHour === null) renderAll(); }, 60 * 1000);
+    window.addEventListener('storage', renderAll);
+    window.addEventListener('focus', renderAll);
+  }
+  boot();
 
   // --- cloud sync -------------------------------------------------
   document.addEventListener('DOMContentLoaded', function () {
     if (typeof initCloudSync !== 'function') return;
     initCloudSync({
-      appKey: 'health',
-      syncedKeys: [LOG_KEY, CUSTOM_KEY, SETTINGS_KEY, WATER_KEY],
-      onApplied: function () { window.dispatchEvent(new Event('storage')); }
+      appKey: 'caffeine',
+      syncedKeys: [LOG_KEY, CUSTOM_KEY],
+      onApplied: renderAll
     });
   });
 })();
