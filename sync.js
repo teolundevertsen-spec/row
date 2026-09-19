@@ -90,19 +90,23 @@
       const state = collect();
       const json = JSON.stringify(state);
       if (json === lastSyncedJson) return;
+      lastSyncedJson = json;
       try {
-        fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=key', {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_KEY,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates',
-          },
-          body: JSON.stringify({ key: appKey, data: state, updated_at: new Date().toISOString() }),
-          keepalive: true,
+        const sessionPromise = supa ? supa.auth.getSession() : Promise.resolve({ data: {} });
+        sessionPromise.then(({ data }) => {
+          const token = (data && data.session && data.session.access_token) || SUPABASE_KEY;
+          fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=key', {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json',
+              'Prefer': 'resolution=merge-duplicates',
+            },
+            body: JSON.stringify({ key: appKey, data: state, updated_at: new Date().toISOString() }),
+            keepalive: true,
+          }).catch(() => {});
         }).catch(() => {});
-        lastSyncedJson = json;
       } catch (e) {}
     }
     (async function init() {

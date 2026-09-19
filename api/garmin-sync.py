@@ -8,20 +8,29 @@ writes them into the same public.app_state Supabase table the rest of
 the dashboard already reads from (key = 'garmin').
 
 Required Vercel env vars:
-  GARMIN_EMAIL     — your Garmin Connect login email
-  GARMIN_PASSWORD  — your Garmin Connect login password
-  CRON_SECRET      — any random string; Vercel sends it back as
-                      "Authorization: Bearer <CRON_SECRET>" on cron
-                      invocations, which this function checks so the
-                      public URL can't be used to trigger a Garmin
-                      login by anyone who finds it.
+  GARMIN_EMAIL              — your Garmin Connect login email
+  GARMIN_PASSWORD           — your Garmin Connect login password
+  CRON_SECRET               — any random string; Vercel sends it back as
+                               "Authorization: Bearer <CRON_SECRET>" on
+                               cron invocations, which this function
+                               checks so the public URL can't be used
+                               to trigger a Garmin login by anyone who
+                               finds it.
+  SUPABASE_SERVICE_ROLE_KEY — the project's service_role key (Supabase
+                               dashboard -> Settings -> API). app_state's
+                               RLS only allows the "authenticated" role
+                               to read/write, and this function has no
+                               user session of its own to authenticate
+                               with - the service_role key bypasses RLS
+                               entirely, which is the standard pattern
+                               for a trusted server-side job. NEVER put
+                               this key in any client-side file - it
+                               must only ever live here, server-side.
 
 We deliberately do NOT cache the Garmin session token anywhere (e.g.
-in Supabase) — the same anon key that's already public in every page
-of this dashboard can read the app_state table, and a cached session
-token there would let anyone with that key pull your Garmin data too.
-A fresh login once a day is an acceptable tradeoff for keeping this
-simple and not adding a new public-readable secret.
+in Supabase) to avoid adding another sensitive value to persist and
+protect. A fresh login once a day is an acceptable tradeoff for
+keeping this simple.
 """
 
 from http.server import BaseHTTPRequestHandler
@@ -30,16 +39,16 @@ import json
 import datetime
 
 SUPABASE_URL = 'https://qigzwmiypboijszfrhkm.supabase.co'
-SUPABASE_KEY = 'sb_publishable_EAe3cddNpZ8vdw17a8kl0w_zDu9CfDb'
 
 
 def push_to_supabase(data):
     import requests
 
+    service_key = os.environ['SUPABASE_SERVICE_ROLE_KEY']
     url = SUPABASE_URL + '/rest/v1/app_state?on_conflict=key'
     headers = {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'apikey': service_key,
+        'Authorization': 'Bearer ' + service_key,
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates',
     }

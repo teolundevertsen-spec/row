@@ -22,9 +22,10 @@ Open any `.html` file directly in your browser — no build step, no install.
 | [finance.html](finance.html) | Finances |
 | [gym.html](gym.html) | Progressive overload gym tracker |
 | [topbar.js](topbar.js) | Shared top bar — auto-injected into pages that `<script src="topbar.js">` |
+| [lock.js](lock.js) | Login gate — shows a Supabase Auth email/password screen and hides the page until signed in |
 | [section-template.html](section-template.html) | Starter template for a new page/section — same design system + cloud sync, ready to copy |
 
-Each app stores its own state in browser `localStorage`. No accounts, no server.
+Each app stores its own state in browser `localStorage`. No accounts, no server — except for the login gate and cloud sync described below.
 
 ## Cloud sync setup (optional)
 
@@ -49,7 +50,37 @@ create policy "anon delete progress-photos"
   on storage.objects for delete using (bucket_id = 'progress-photos');
 ```
 
-You'll also need a `public.app_state` table (key text primary key, data jsonb, updated_at timestamptz) with RLS policies allowing anon select/insert/update — this is what `topbar.js`, `sync.js`, and `gym.html` read/write for everything except photos.
+You'll also need a `public.app_state` table (key text primary key, data jsonb, updated_at timestamptz) — see **Login / access control** below for the RLS policies, since access is restricted to a logged-in user rather than left open to `anon`.
+
+## Login / access control
+
+Every page loads [lock.js](lock.js) right after the Supabase CDN script, which hides the page and shows an email/password login screen until you're signed in via Supabase Auth. This isn't just a UI gate — the underlying `app_state` table's RLS policies are restricted to the `authenticated` role, so even someone who finds this repo's (public) Supabase URL + key can't read or write your data without actually logging in.
+
+Setup, in order (**do this before relying on the login screen** — until you've created a user, you won't be able to get past it):
+
+1. In Supabase → **Authentication → Sign In / Providers**: confirm **Email** is enabled, and **turn off "Allow new users to sign up"** (and "Allow anonymous sign-ins" if present) so nobody but you can ever create an account.
+2. **Authentication → Users → Add user**: create yourself an account (your email + a password only you know).
+3. In the **SQL Editor**, lock down the data table to logged-in users only:
+   ```sql
+   do $$
+   declare pol record;
+   begin
+     for pol in select policyname from pg_policies where schemaname='public' and tablename='app_state'
+     loop
+       execute format('drop policy %I on public.app_state', pol.policyname);
+     end loop;
+   end $$;
+
+   create policy "authenticated select app_state"
+     on public.app_state for select to authenticated using (true);
+   create policy "authenticated insert app_state"
+     on public.app_state for insert to authenticated with check (true);
+   create policy "authenticated update app_state"
+     on public.app_state for update to authenticated using (true) with check (true);
+   ```
+4. Once logged in on a device, the session persists (localStorage) across every page on the dashboard — you only log in once per browser.
+
+**Known gap:** gym progress photos (`storage.objects`, bucket `progress-photos`) are still on a public bucket with `anon` policies from the Cloud sync setup section above — they weren't locked down in this pass. The bucket's `public: true` flag means files are reachable via their public URL regardless of `storage.objects` RLS, so properly closing this off would mean switching the bucket to private and `gym.html` to signed URLs instead of `getPublicUrl()`.
 
 ## Garmin sync setup (optional)
 
@@ -64,7 +95,7 @@ It uses the unofficial [`garminconnect`](https://pypi.org/project/garminconnect/
 2. Redeploy. The cron in `vercel.json` runs daily at 09:00 UTC — edit the schedule string if you want a different time.
 3. To test it immediately rather than waiting for the cron, visit `https://<your-app>.vercel.app/api/garmin-sync` with an `Authorization: Bearer <your CRON_SECRET>` header (e.g. `curl -H "Authorization: Bearer <secret>" https://.../api/garmin-sync`).
 
-**Note on credentials:** never put your Garmin email/password anywhere in this repo — Vercel env vars are the only place they should live. The function deliberately re-logs-in every run instead of caching a session token in Supabase, since that table's anon key is public (embedded in every page) — a cached token there would be readable by anyone who inspects the site's JS.
+**Note on credentials:** never put your Garmin email/password anywhere in this repo — Vercel env vars are the only place they should live. The function deliberately re-logs-in every run instead of caching a session token in Supabase, to avoid adding another sensitive value to that table even though it's now locked to `authenticated` access (see **Login / access control** above).
 
 ## Building from scratch
 

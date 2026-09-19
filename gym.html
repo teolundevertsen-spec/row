@@ -1264,6 +1264,7 @@ img, video, canvas, svg { max-width: 100%; }
 .hidden { display: none !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="lock.js"></script>
 </head>
 <body>
 
@@ -3451,19 +3452,22 @@ img, video, canvas, svg { max-width: 100%; }
     const state = pcCollectState();
     const json = JSON.stringify(state);
     if (json === pcLastSyncedJson) return;
+    pcLastSyncedJson = json;
     try {
-      fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=key', {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify({ key: APP_KEY, data: state, updated_at: new Date().toISOString() }),
-        keepalive: true,
+      pcSupa.auth.getSession().then(({ data }) => {
+        const token = (data && data.session && data.session.access_token) || SUPABASE_KEY;
+        fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=key', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates',
+          },
+          body: JSON.stringify({ key: APP_KEY, data: state, updated_at: new Date().toISOString() }),
+          keepalive: true,
+        }).catch(() => {});
       }).catch(() => {});
-      pcLastSyncedJson = json;
     } catch (_) {}
   }
 

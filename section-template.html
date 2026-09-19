@@ -17,14 +17,16 @@
 <!--   3. Give each section its own SECTION_ID (see the script at   -->
 <!--      the bottom) so it saves + syncs independently.             -->
 <!-- ============================================================= -->
-<script src="lock.js"></script>                                  <!-- passcode lock screen -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050506">
 <title>New Section · Dashboard</title>
 
-<!-- Shared dashboard scripts. Keep these in this order. -->
+<!-- Shared dashboard scripts. Keep these in this order - lock.js must
+     load right after supabase-js (it needs window.supabase) and NOT
+     be deferred, so it can hide the page before first paint. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="lock.js"></script>           <!-- login lock screen -->
 <script src="sync.js" defer></script>     <!-- cloud sync across devices -->
 <script src="topbar.js" defer></script>   <!-- top water bar + bottom tab nav -->
 
