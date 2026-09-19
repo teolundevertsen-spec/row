@@ -17,10 +17,11 @@ Open any `.html` file directly in your browser — no build step, no install.
 | [index.html](index.html) | Bento grid hub — the home page, links out to every tracker |
 | [main.html](main.html) | Goals tracker (Day Ring, Goal Ticker, To Do list) |
 | [health.html](health.html) | Supplement / daily stack tracker |
-| [caffeine.html](caffeine.html) | Predictive energy-curve caffeine tracker — searchable drink DB, WHOOP-aware energy model, smart timing tips |
+| [caffeine.html](caffeine.html) | Predictive energy-curve caffeine tracker — searchable drink DB, Garmin-aware energy model, smart timing tips |
 | [po-water.html](po-water.html) | Water intake tracker |
 | [finance.html](finance.html) | Finances |
 | [gym.html](gym.html) | Progressive overload gym tracker |
+| [piano.html](piano.html) | Piano practice tracker — streak/heatmap, song goals with progress bars, learned-songs archive |
 | [topbar.js](topbar.js) | Shared top bar — auto-injected into pages that `<script src="topbar.js">` |
 | [lock.js](lock.js) | Login gate — shows a Supabase Auth email/password screen and hides the page until signed in |
 | [section-template.html](section-template.html) | Starter template for a new page/section — same design system + cloud sync, ready to copy |

@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<title>Piano</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="lock.js"></script>
+<script src="sync.js" defer></script>
+<script src="topbar.js" defer></script>
+
+<style>
+:root {
+  --text-primary: #FAFAFA;
+  --text-secondary: #B8B6B0;
+  --text-tertiary: #76746E;
+  --success: #6BE3A4;
+  --warning: #F2C063;
+  --danger: #FF6B6B;
+  --accent: #A78BFA;
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: #050506;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  padding: max(28px, env(safe-area-inset-top)) 20px 60px;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(circle at 82% 14%, rgba(224, 118, 88, 0.16), transparent 45%),
+    radial-gradient(circle at 18% 90%, rgba(180, 180, 200, 0.06), transparent 50%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: -2;
+  animation: drift 36s ease-in-out infinite alternate;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
+  background-size: 3px 3px;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes drift {
+  0%   { transform: translate3d(0,0,0); }
+  100% { transform: translate3d(-22px, 14px, 0); }
+}
+
+.page { max-width: 720px; margin: 0 auto; }
+
+.dash-title { margin: 0 0 4px; font-size: 28px; font-weight: 700; letter-spacing: -0.025em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent; }
+.dash-sub { margin: 0 0 20px; font-size: 12.5px; color: var(--text-tertiary); }
+@media (max-width: 480px) { .dash-title { font-size: 22px; } }
+
+.section { margin-top: 8px; }
+.section-title {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-tertiary); display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+}
+.section-title::before { content: ''; width: 18px; height: 1px; background: var(--text-tertiary); opacity: 0.6; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent); }
+
+.gm-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 16px; padding: 20px; margin-bottom: 14px;
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  overflow: hidden;
+}
+
+/* ===== Your Practice ===== */
+.pn-streak-row { display: flex; gap: 12px; margin-bottom: 14px; }
+.pn-streak-tile { flex: 1; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; text-align: center; }
+.pn-streak-num { font-size: 30px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; }
+.pn-streak-num .pn-streak-fire { font-size: 20px; margin-left: 2px; }
+.pn-streak-label { margin-top: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+
+.pn-heatmap { display: grid; grid-template-columns: repeat(15, 1fr); gap: 5px; }
+.pn-heat-cell { aspect-ratio: 1; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.04); }
+.pn-heat-cell.is-active { background: var(--accent); border-color: transparent; box-shadow: 0 0 8px rgba(167,139,250,0.5); }
+.pn-heat-cell.is-today { outline: 1.5px solid rgba(255,255,255,0.5); outline-offset: 1px; }
+.pn-heatmap-caption { margin-top: 8px; font-size: 11px; color: var(--text-tertiary); text-align: right; }
+
+/* ===== Forms ===== */
+.gm-input {
+  width: 100%; padding: 11px 14px;
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: rgba(0,0,0,0.28);
+  color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.gm-input::placeholder { color: var(--text-tertiary); }
+.gm-input:focus { border-color: rgba(255,255,255,0.28); background: rgba(0,0,0,0.36); }
+textarea.gm-input { resize: vertical; min-height: 44px; font-family: inherit; }
+.pn-form-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.pn-form-row > * { flex: 1; min-width: 120px; }
+.pn-form-field { display: flex; flex-direction: column; gap: 4px; }
+.pn-form-field label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+select.gm-input { cursor: pointer; }
+
+.gm-add {
+  padding: 11px 20px; border: 0; border-radius: 12px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
+  color: #0A0A0B; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.35), 0 8px 22px rgba(0,0,0,0.25);
+  transition: transform 0.1s, filter 0.15s;
+}
+.gm-add:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.gm-add:active { transform: translateY(0); }
+.gm-ghost {
+  padding: 11px 18px; border: 1px solid rgba(255,255,255,0.10); border-radius: 12px;
+  background: rgba(255,255,255,0.04); color: var(--text-primary);
+  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.gm-ghost:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); }
+
+.toggle-group { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.06); }
+.toggle-btn {
+  border: 0; background: transparent; color: var(--text-tertiary);
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  padding: 8px 14px; border-radius: 7px; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.toggle-btn.is-active { background: rgba(255,255,255,0.10); color: var(--text-primary); }
+
+/* ===== Songs ===== */
+.goal-list { list-style: none; margin: 0; padding: 0; }
+.empty-state { text-align: center; font-size: 12px; font-style: italic; color: var(--text-tertiary); padding: 14px 0; }
+.pn-song {
+  padding: 14px; margin-bottom: 8px;
+  background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+}
+.pn-song-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.pn-song-title { font-size: 14.5px; font-weight: 700; color: var(--text-primary); }
+.pn-song-artist { font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; }
+.pn-song-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.pn-icon-btn {
+  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: var(--text-tertiary);
+  border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s, color 0.15s;
+}
+.pn-icon-btn:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+.pn-icon-btn.pn-complete-btn:hover { color: var(--success); border-color: rgba(107,227,164,0.3); }
+.pn-icon-btn.pn-delete-btn:hover { color: var(--danger); border-color: rgba(255,107,107,0.3); }
+
+.pn-bar-track { position: relative; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.pn-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), #D4C4FB); transition: width 0.4s ease; }
+.pn-bar-fill.is-done { background: linear-gradient(90deg, var(--success), #8FEFC1); }
+.pn-song-meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-tertiary); }
+.pn-song-pct { font-weight: 700; color: var(--text-secondary); }
+
+.pn-archive-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 6px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; }
+.pn-archive-icon { font-size: 18px; flex-shrink: 0; }
+.pn-archive-body { flex: 1; min-width: 0; }
+.pn-archive-title { font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+.pn-archive-meta { font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px; }
+
+/* ===== Sessions log ===== */
+.gm-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 6px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; }
+.gm-row-body { flex: 1; min-width: 0; }
+.gm-row-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); width: 64px; flex-shrink: 0; }
+.gm-row-name { font-size: 13px; color: var(--text-primary); font-weight: 600; }
+.gm-row-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.goal-delete { border: 0; background: transparent; color: var(--text-tertiary); font-size: 18px; cursor: pointer; padding: 0 4px; opacity: 0.5; transition: opacity 0.2s, color 0.2s; }
+.gm-row:hover .goal-delete { opacity: 1; }
+.goal-delete:hover { color: var(--danger); }
+
+@media (max-width: 480px) {
+  body { padding: max(20px, env(safe-area-inset-top)) 14px 50px; }
+  .gm-card { padding: 16px; }
+  .pn-heatmap { grid-template-columns: repeat(10, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1 class="dash-title">Piano</h1>
+  <p class="dash-sub">Practice consistency & song progress.</p>
+
+  <!-- ===== Your Practice ===== -->
+  <div class="section">
+    <div class="section-title">Your Practice</div>
+    <div class="gm-card">
+      <div class="pn-streak-row">
+        <div class="pn-streak-tile">
+          <div class="pn-streak-num" id="pnStreak">0<span class="pn-streak-fire">🔥</span></div>
+          <div class="pn-streak-label">Day Streak</div>
+        </div>
+        <div class="pn-streak-tile">
+          <div class="pn-streak-num" id="pnLast30">0</div>
+          <div class="pn-streak-label">Days · Last 30</div>
+        </div>
+        <div class="pn-streak-tile">
+          <div class="pn-streak-num" id="pnTotalMin">0</div>
+          <div class="pn-streak-label">Minutes · Last 30</div>
+        </div>
+      </div>
+      <div class="pn-heatmap" id="pnHeatmap"></div>
+      <div class="pn-heatmap-caption">Last 30 days</div>
+    </div>
+  </div>
+
+  <!-- ===== Log a practice session ===== -->
+  <div class="section">
+    <div class="section-title">Log a Practice Session</div>
+    <div class="gm-card">
+      <div class="pn-form-row">
+        <div class="pn-form-field">
+          <label for="pnSessDate">Date</label>
+          <input class="gm-input" id="pnSessDate" type="date">
+        </div>
+        <div class="pn-form-field">
+          <label for="pnSessMin">Minutes</label>
+          <input class="gm-input" id="pnSessMin" type="number" min="0" step="1" placeholder="e.g. 30">
+        </div>
+      </div>
+      <div class="pn-form-row">
+        <div class="pn-form-field" style="flex:1 1 100%">
+          <label for="pnSessSong">Song (optional)</label>
+          <select class="gm-input" id="pnSessSong">
+            <option value="">General practice</option>
+          </select>
+        </div>
+      </div>
+      <div class="pn-form-row">
+        <div class="pn-form-field" style="flex:1 1 100%">
+          <label for="pnSessNote">Note (optional)</label>
+          <textarea class="gm-input" id="pnSessNote" rows="2" placeholder="What did you work on?"></textarea>
+        </div>
+      </div>
+      <button class="gm-add" id="pnSessAdd" type="button">Log Session</button>
+    </div>
+  </div>
+
+  <!-- ===== Active songs ===== -->
+  <div class="section">
+    <div class="section-title">Active Songs</div>
+    <div class="gm-card">
+      <ul class="goal-list" id="pnSongList"></ul>
+
+      <button class="gm-ghost" id="pnSongToggle" type="button" style="margin-top:6px">+ Add a song</button>
+      <div id="pnSongForm" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06);">
+        <div class="pn-form-row">
+          <div class="pn-form-field" style="flex:1 1 60%">
+            <label for="pnNewTitle">Title</label>
+            <input class="gm-input" id="pnNewTitle" type="text" placeholder="e.g. Clair de Lune">
+          </div>
+          <div class="pn-form-field" style="flex:1 1 35%">
+            <label for="pnNewArtist">Artist / composer</label>
+            <input class="gm-input" id="pnNewArtist" type="text" placeholder="Optional">
+          </div>
+        </div>
+        <div class="pn-form-row" style="align-items:flex-end">
+          <div class="pn-form-field">
+            <label>Goal type</label>
+            <div class="toggle-group" id="pnGoalTypeToggle">
+              <button type="button" class="toggle-btn is-active" data-type="sessions">Sessions</button>
+              <button type="button" class="toggle-btn" data-type="minutes">Minutes</button>
+            </div>
+          </div>
+          <div class="pn-form-field">
+            <label for="pnNewGoal">Target</label>
+            <input class="gm-input" id="pnNewGoal" type="number" min="1" step="1" placeholder="e.g. 20">
+          </div>
+        </div>
+        <button class="gm-add" id="pnSongSave" type="button" style="margin-top:4px">Save Song</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Archive ===== -->
+  <div class="section">
+    <div class="section-title">Songs You've Learned</div>
+    <div class="gm-card">
+      <ul class="goal-list" id="pnArchiveList"></ul>
+    </div>
+  </div>
+
+  <!-- ===== Session history ===== -->
+  <div class="section">
+    <div class="section-title">Recent Sessions</div>
+    <div class="gm-card">
+      <ul class="goal-list" id="pnSessionList"></ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SESSIONS_KEY = 'piano:sessions';
+  var SONGS_KEY = 'piano:songs';
+
+  function $(id) { return document.getElementById(id); }
+  function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+  // --- storage -------------------------------------------------
+  function loadSessions() {
+    try { return JSON.parse(localStorage.getItem(SESSIONS_KEY)) || []; } catch (e) { return []; }
+  }
+  function saveSessions(list) { localStorage.setItem(SESSIONS_KEY, JSON.stringify(list)); }
+  function loadSongs() {
+    try { return JSON.parse(localStorage.getItem(SONGS_KEY)) || []; } catch (e) { return []; }
+  }
+  function saveSongs(list) { localStorage.setItem(SONGS_KEY, JSON.stringify(list)); }
+
+  // --- date helpers -----------------------------------------------
+  function dateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function todayKey() { return dateKey(new Date()); }
+  function fmtShortDate(key) {
+    var d = new Date(key + 'T00:00:00');
+    var mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return mons[d.getMonth()] + ' ' + d.getDate();
+  }
+
+  // --- streak / consistency ---------------------------------------
+  function practiceDateSet() {
+    var set = {};
+    loadSessions().forEach(function (s) { if (s && s.date) set[s.date] = true; });
+    return set;
+  }
+  function currentStreak() {
+    var dates = practiceDateSet();
+    var cursor = new Date(); cursor.setHours(0, 0, 0, 0);
+    if (!dates[dateKey(cursor)]) cursor.setDate(cursor.getDate() - 1); // don't break streak before today's session is logged
+    var streak = 0;
+    while (dates[dateKey(cursor)]) { streak++; cursor.setDate(cursor.getDate() - 1); }
+    return streak;
+  }
+  function last30Stats() {
+    var sessions = loadSessions();
+    var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 29); cutoff.setHours(0, 0, 0, 0);
+    var daySet = {}, totalMin = 0;
+    sessions.forEach(function (s) {
+      if (!s || !s.date) return;
+      var d = new Date(s.date + 'T00:00:00');
+      if (d >= cutoff) { daySet[s.date] = true; totalMin += Number(s.minutes) || 0; }
+    });
+    return { days: Object.keys(daySet).length, minutes: totalMin };
+  }
+  function renderHeatmap() {
+    var dates = practiceDateSet();
+    var el = $('pnHeatmap');
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var html = '';
+    for (var i = 29; i >= 0; i--) {
+      var d = new Date(today); d.setDate(d.getDate() - i);
+      var key = dateKey(d);
+      var cls = 'pn-heat-cell' + (dates[key] ? ' is-active' : '') + (i === 0 ? ' is-today' : '');
+      html += '<div class="' + cls + '" title="' + key + (dates[key] ? ' · practiced' : '') + '"></div>';
+    }
+    el.innerHTML = html;
+  }
+
+  // --- song progress ------------------------------------------------
+  function songSessions(songId) {
+    return loadSessions().filter(function (s) { return s.songId === songId; });
+  }
+  function songProgress(song) {
+    var sessions = songSessions(song.id);
+    if (song.goalType === 'minutes') {
+      var mins = sessions.reduce(function (s, x) { return s + (Number(x.minutes) || 0); }, 0);
+      return { done: mins, goal: song.goalTarget, pct: Math.min(100, (mins / song.goalTarget) * 100), unit: 'min' };
+    }
+    return { done: sessions.length, goal: song.goalTarget, pct: Math.min(100, (sessions.length / song.goalTarget) * 100), unit: 'sessions' };
+  }
+
+  // --- render: Your Practice ---------------------------------------
+  function renderPractice() {
+    $('pnStreak').innerHTML = currentStreak() + '<span class="pn-streak-fire">🔥</span>';
+    var stats = last30Stats();
+    $('pnLast30').textContent = stats.days;
+    $('pnTotalMin').textContent = stats.minutes;
+    renderHeatmap();
+  }
+
+  // --- render: song select for session form -------------------------
+  function renderSongSelect() {
+    var sel = $('pnSessSong');
+    var current = sel.value;
+    var active = loadSongs().filter(function (s) { return !s.completed; });
+    sel.innerHTML = '<option value="">General practice</option>' +
+      active.map(function (s) { return '<option value="' + s.id + '">' + escapeHtml(s.title) + '</option>'; }).join('');
+    if (active.some(function (s) { return s.id === current; })) sel.value = current;
+  }
+
+  // --- render: active songs -----------------------------------------
+  function renderSongs() {
+    var listEl = $('pnSongList');
+    var songs = loadSongs().filter(function (s) { return !s.completed; });
+    if (!songs.length) {
+      listEl.innerHTML = '<li class="empty-state">No active songs yet — add one below.</li>';
+      return;
+    }
+    listEl.innerHTML = '';
+    songs.forEach(function (song) {
+      var prog = songProgress(song);
+      var li = document.createElement('li');
+      li.className = 'pn-song';
+      li.innerHTML =
+        '<div class="pn-song-head">' +
+          '<div>' +
+            '<div class="pn-song-title">' + escapeHtml(song.title) + '</div>' +
+            (song.artist ? '<div class="pn-song-artist">' + escapeHtml(song.artist) + '</div>' : '') +
+          '</div>' +
+          '<div class="pn-song-actions">' +
+            '<button class="pn-icon-btn pn-complete-btn" data-id="' + song.id + '" title="Mark as learned" type="button">✓</button>' +
+            '<button class="pn-icon-btn pn-delete-btn" data-id="' + song.id + '" title="Delete" type="button">×</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pn-bar-track"><div class="pn-bar-fill' + (prog.pct >= 100 ? ' is-done' : '') + '" style="width:' + prog.pct + '%"></div></div>' +
+        '<div class="pn-song-meta">' +
+          '<span>' + prog.done + ' / ' + prog.goal + ' ' + prog.unit + '</span>' +
+          '<span class="pn-song-pct">' + Math.round(prog.pct) + '%</span>' +
+        '</div>';
+      listEl.appendChild(li);
+    });
+  }
+  $('pnSongList').addEventListener('click', function (e) {
+    var completeBtn = e.target.closest('.pn-complete-btn');
+    var deleteBtn = e.target.closest('.pn-delete-btn');
+    if (completeBtn) {
+      var songs = loadSongs();
+      var song = songs.find(function (s) { return s.id === completeBtn.dataset.id; });
+      if (song && confirm('Mark "' + song.title + '" as learned?')) {
+        song.completed = true;
+        song.completedDate = todayKey();
+        saveSongs(songs);
+        renderAll();
+      }
+    } else if (deleteBtn) {
+      var songs2 = loadSongs();
+      var s2 = songs2.find(function (s) { return s.id === deleteBtn.dataset.id; });
+      if (s2 && confirm('Delete "' + s2.title + '"? This does not delete its logged sessions.')) {
+        saveSongs(songs2.filter(function (s) { return s.id !== deleteBtn.dataset.id; }));
+        renderAll();
+      }
+    }
+  });
+
+  // --- render: archive -----------------------------------------------
+  function renderArchive() {
+    var listEl = $('pnArchiveList');
+    var songs = loadSongs().filter(function (s) { return s.completed; })
+      .sort(function (a, b) { return (b.completedDate || '').localeCompare(a.completedDate || ''); });
+    if (!songs.length) {
+      listEl.innerHTML = '<li class="empty-state">Nothing learned yet — finish a song to see it here.</li>';
+      return;
+    }
+    listEl.innerHTML = '';
+    songs.forEach(function (song) {
+      var prog = songProgress(song);
+      var li = document.createElement('li');
+      li.className = 'pn-archive-item';
+      li.innerHTML =
+        '<span class="pn-archive-icon">🎹</span>' +
+        '<div class="pn-archive-body">' +
+          '<div class="pn-archive-title">' + escapeHtml(song.title) + (song.artist ? ' <span style="color:var(--text-tertiary);font-weight:400">· ' + escapeHtml(song.artist) + '</span>' : '') + '</div>' +
+          '<div class="pn-archive-meta">Learned ' + (song.completedDate ? fmtShortDate(song.completedDate) : '') + ' · ' + prog.done + ' ' + prog.unit + '</div>' +
+        '</div>';
+      listEl.appendChild(li);
+    });
+  }
+
+  // --- render: session history -----------------------------------------
+  function renderSessionList() {
+    var listEl = $('pnSessionList');
+    var songs = loadSongs();
+    var sessions = loadSessions().slice().sort(function (a, b) {
+      return (b.date + (b.createdAt || '')).localeCompare(a.date + (a.createdAt || ''));
+    }).slice(0, 25);
+    if (!sessions.length) {
+      listEl.innerHTML = '<li class="empty-state">No sessions logged yet.</li>';
+      return;
+    }
+    listEl.innerHTML = '';
+    sessions.forEach(function (s) {
+      var song = songs.find(function (x) { return x.id === s.songId; });
+      var li = document.createElement('li');
+      li.className = 'gm-row';
+      li.innerHTML =
+        '<span class="gm-row-date">' + fmtShortDate(s.date) + '</span>' +
+        '<div class="gm-row-body">' +
+          '<div class="gm-row-name">' + (song ? escapeHtml(song.title) : 'General practice') + (s.minutes ? ' · ' + s.minutes + ' min' : '') + '</div>' +
+          (s.note ? '<div class="gm-row-meta">' + escapeHtml(s.note) + '</div>' : '') +
+        '</div>' +
+        '<button class="goal-delete" data-id="' + s.id + '" type="button">×</button>';
+      listEl.appendChild(li);
+    });
+  }
+  $('pnSessionList').addEventListener('click', function (e) {
+    var btn = e.target.closest('.goal-delete');
+    if (!btn) return;
+    saveSessions(loadSessions().filter(function (s) { return s.id !== btn.dataset.id; }));
+    renderAll();
+  });
+
+  // --- log a session -----------------------------------------------
+  $('pnSessDate').value = todayKey();
+  $('pnSessAdd').addEventListener('click', function () {
+    var date = $('pnSessDate').value || todayKey();
+    var minutes = Number($('pnSessMin').value) || 0;
+    var songId = $('pnSessSong').value || null;
+    var note = $('pnSessNote').value.trim();
+    var list = loadSessions();
+    list.push({
+      id: 'ps' + Date.now() + '_' + Math.floor(Math.random() * 999),
+      date: date, minutes: minutes, songId: songId, note: note,
+      createdAt: new Date().toISOString()
+    });
+    saveSessions(list);
+    $('pnSessMin').value = '';
+    $('pnSessNote').value = '';
+    renderAll();
+  });
+
+  // --- add a song ------------------------------------------------
+  var goalType = 'sessions';
+  $('pnSongToggle').addEventListener('click', function () {
+    var form = $('pnSongForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  });
+  $('pnGoalTypeToggle').addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    document.querySelectorAll('#pnGoalTypeToggle .toggle-btn').forEach(function (b) { b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+    goalType = btn.dataset.type;
+    $('pnNewGoal').placeholder = goalType === 'minutes' ? 'e.g. 600' : 'e.g. 20';
+  });
+  $('pnSongSave').addEventListener('click', function () {
+    var title = $('pnNewTitle').value.trim();
+    var artist = $('pnNewArtist').value.trim();
+    var goal = Number($('pnNewGoal').value);
+    if (!title || !goal || goal <= 0) { alert('Enter a title and a target.'); return; }
+    var list = loadSongs();
+    list.push({
+      id: 'sg' + Date.now() + '_' + Math.floor(Math.random() * 999),
+      title: title, artist: artist, goalType: goalType, goalTarget: goal,
+      completed: false, completedDate: null, createdDate: todayKey()
+    });
+    saveSongs(list);
+    $('pnNewTitle').value = ''; $('pnNewArtist').value = ''; $('pnNewGoal').value = '';
+    $('pnSongForm').style.display = 'none';
+    renderAll();
+  });
+
+  // --- render all -----------------------------------------------
+  function renderAll() {
+    renderPractice();
+    renderSongSelect();
+    renderSongs();
+    renderArchive();
+    renderSessionList();
+  }
+  renderAll();
+  window.addEventListener('storage', renderAll);
+  window.addEventListener('focus', renderAll);
+
+  // --- cloud sync -------------------------------------------------
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof initCloudSync !== 'function') return;
+    initCloudSync({
+      appKey: 'piano',
+      syncedKeys: [SESSIONS_KEY, SONGS_KEY],
+      onApplied: renderAll
+    });
+  });
+})();
+</script>
+</body>
+</html>
