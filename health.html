@@ -700,9 +700,15 @@ main {
   let todayKey = `stack:taken:${getActiveDate()}`;
 
   function getItems() {
-    const storedVersion = storeGet('stack:version');
     const stored = storeGet('stack:items');
-    if (!stored || !Array.isArray(stored) || !stored.length || storedVersion !== TEMPLATE_VERSION) {
+    // Only seed the default template on a truly first-ever visit (nothing
+    // stored at all). Do NOT reset based on TEMPLATE_VERSION - that field
+    // is synced independently from stack:items, and cloud sync pulling
+    // your real data down is async while this runs synchronously on page
+    // load, so a fresh tab/device would otherwise see a momentary version
+    // mismatch and wipe your real stack back to the defaults before the
+    // real data has arrived.
+    if (!stored || !Array.isArray(stored) || !stored.length) {
       const fresh = JSON.parse(JSON.stringify(STACK_DEFAULTS));
       storeSet('stack:items', fresh);
       storeSet('stack:version', TEMPLATE_VERSION);
