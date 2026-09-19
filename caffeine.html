@@ -92,13 +92,14 @@ body::after {
 }
 
 /* ===== Your Day ===== */
-.day-header { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
-.day-ring-wrap { position: relative; width: 108px; height: 108px; flex-shrink: 0; }
-.day-ring { width: 108px; height: 108px; transform: rotate(0deg); }
-.day-ring-track { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 9; }
+.day-header { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; }
+.day-ring-wrap { position: relative; width: 118px; height: 118px; flex-shrink: 0; }
+.day-ring { width: 118px; height: 118px; transform: rotate(0deg); }
+.day-ring-track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 8; }
 .day-ring-fill {
-  fill: none; stroke: var(--success); stroke-width: 9; stroke-linecap: round;
+  fill: none; stroke: var(--success); stroke-width: 8; stroke-linecap: round;
   transform-origin: 60px 60px; transform: rotate(-90deg);
+  filter: drop-shadow(0 0 7px currentColor);
   transition: stroke-dashoffset 0.5s ease, stroke 0.4s ease;
 }
 .day-ring-fill.amber { stroke: var(--warning); }
@@ -106,13 +107,23 @@ body::after {
 .day-ring-center {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.day-ring-num { font-size: 30px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; }
-.day-ring-state { margin-top: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.day-ring-num { font-size: 34px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; }
+.day-ring-state { margin-top: 4px; font-size: 13px; font-weight: 700; font-style: italic; color: var(--success); }
+.day-ring-state.amber { color: var(--warning); }
+.day-ring-state.red { color: var(--danger); }
 .day-header-info { flex: 1; min-width: 0; }
-.day-header-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
-.day-header-hint { font-size: 12px; color: var(--text-tertiary); }
+.day-header-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+.day-header-hint { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 6px; }
+.day-header-hint::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--text-tertiary); flex-shrink: 0; }
 
-.chart-toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.chart-section-row {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap; margin-bottom: 12px;
+}
+.chart-section-title { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
+.chart-section-sub { margin-top: 2px; font-size: 11px; color: var(--text-tertiary); line-height: 1.4; max-width: 280px; }
+
+.chart-toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
 .chart-toggle-btn {
   border: 0; background: transparent; color: var(--text-tertiary);
   font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
@@ -121,7 +132,7 @@ body::after {
 .chart-toggle-btn.is-active { background: rgba(255,255,255,0.10); color: var(--text-primary); }
 
 .energy-chart-wrap { position: relative; touch-action: pan-y; cursor: crosshair; }
-#energyChart { display: block; width: 100%; height: 180px; }
+#energyChart { display: block; width: 100%; height: 190px; }
 .energy-chart-axis { display: flex; justify-content: space-between; margin-top: 4px; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-tertiary); }
 
 .day-footer-band { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); }
@@ -259,7 +270,7 @@ body::after {
 <div class="page">
 
   <h1 class="dash-title">Caffeine</h1>
-  <p class="dash-sub">Predictive energy curve — not medical advice.</p>
+  <p class="dash-sub">Your Coffee Score — predicted energy, hour by hour. Not medical advice.</p>
 
   <!-- ===== Your Day ===== -->
   <div class="section">
@@ -278,14 +289,20 @@ body::after {
         </div>
         <div class="day-header-info">
           <div class="day-header-label" id="dayHeaderLabel">RIGHT NOW</div>
-          <div class="day-header-hint">Hover or drag the curve to explore your day</div>
+          <div class="day-header-hint">Hover the curve</div>
         </div>
       </div>
 
-      <div class="chart-toggle" role="tablist">
-        <button type="button" class="chart-toggle-btn is-active" data-mode="line">LINE</button>
-        <button type="button" class="chart-toggle-btn" data-mode="bars">BARS</button>
-        <button type="button" class="chart-toggle-btn" data-mode="stack">STACK</button>
+      <div class="chart-section-row">
+        <div>
+          <div class="chart-section-title">Today's Coffee Score</div>
+          <div class="chart-section-sub">Your predicted score, hour by hour. Hover or drag to scrub.</div>
+        </div>
+        <div class="chart-toggle" role="tablist">
+          <button type="button" class="chart-toggle-btn is-active" data-mode="line">LINE</button>
+          <button type="button" class="chart-toggle-btn" data-mode="bars">BARS</button>
+          <button type="button" class="chart-toggle-btn" data-mode="stack">STACK</button>
+        </div>
       </div>
 
       <div class="energy-chart-wrap" id="energyChartWrap">
@@ -540,6 +557,19 @@ body::after {
     var d = new Date();
     return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
   }
+  // "in 2h 15m" style countdown to a target hour-of-day, wrapping to
+  // tomorrow if that hour has already passed today.
+  function hoursUntilLabel(targetHour) {
+    var diff = targetHour - nowHourFloat();
+    if (diff < 0) diff += 24;
+    var h = Math.floor(diff);
+    var m = Math.round((diff - h) * 60);
+    if (m === 60) { h += 1; m = 0; }
+    if (h <= 0 && m <= 0) return 'now';
+    if (h <= 0) return m + 'm';
+    if (m === 0) return h + 'h';
+    return h + 'h ' + m + 'm';
+  }
   function startOfToday() {
     var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime();
   }
@@ -653,9 +683,12 @@ body::after {
     var offset = RING_C * (1 - clamp(score, 0, 100) / 100);
     fillEl.style.strokeDasharray = RING_C;
     fillEl.style.strokeDashoffset = offset;
-    fillEl.setAttribute('class', 'day-ring-fill ' + scoreClass(score));
+    var cls = scoreClass(score);
+    fillEl.setAttribute('class', 'day-ring-fill ' + cls);
     $('dayRingNum').textContent = Math.round(score);
-    $('dayRingState').textContent = scoreState(score);
+    var stateEl = $('dayRingState');
+    stateEl.textContent = scoreState(score);
+    stateEl.className = 'day-ring-state ' + cls;
   }
 
   function valueAtHour(hour) {
@@ -685,19 +718,40 @@ body::after {
     if (wake > 0) nightRects += '<rect x="0" y="0" width="' + xFor(wake) + '" height="' + H + '" fill="rgba(255,255,255,0.025)"></rect>';
     if (bedtime < 24) nightRects += '<rect x="' + xFor(bedtime) + '" y="0" width="' + (W - xFor(bedtime)) + '" height="' + H + '" fill="rgba(255,255,255,0.025)"></rect>';
 
+    // Soft highlight bands wherever today's score is in the High/Peak
+    // range (>=62, matching scoreClass()'s "good" threshold) - shows
+    // the windows the curve peaks in at a glance, like a heatmap strip.
+    var peakRects = '';
+    var runStart = null;
+    for (var pk = 0; pk < dayPoints.length; pk++) {
+      var isHigh = dayPoints[pk].total >= 62;
+      if (isHigh && runStart === null) runStart = dayPoints[pk].t;
+      if ((!isHigh || pk === dayPoints.length - 1) && runStart !== null) {
+        var runEnd = isHigh ? dayPoints[pk].t : dayPoints[pk - 1].t;
+        if (runEnd - runStart >= 0.4) {
+          peakRects += '<rect x="' + xFor(runStart) + '" y="0" width="' + (xFor(runEnd) - xFor(runStart)) + '" height="' + H + '" fill="rgba(107,227,164,0.055)"></rect>';
+        }
+        runStart = null;
+      }
+    }
+
     var defs = '<defs>' +
-      '<filter id="cfGlow" x="-50%" y="-50%" width="200%" height="200%">' +
-        '<feGaussianBlur stdDeviation="3.2" result="blur"></feGaussianBlur>' +
-        '<feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>' +
+      '<filter id="cfGlow" x="-60%" y="-60%" width="220%" height="220%">' +
+        '<feGaussianBlur stdDeviation="4.5" result="blur"></feGaussianBlur>' +
+        '<feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>' +
       '</filter>' +
       '<linearGradient id="cfAreaGrad" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0%" stop-color="' + 'rgba(107,227,164,0.30)' + '"></stop>' +
+        '<stop offset="0%" stop-color="' + 'rgba(107,227,164,0.34)' + '"></stop>' +
         '<stop offset="100%" stop-color="rgba(107,227,164,0.02)"></stop>' +
       '</linearGradient>' +
       '<linearGradient id="cfStackGrad" x1="0" y1="0" x2="0" y2="1">' +
         '<stop offset="0%" stop-color="rgba(201,163,107,0.55)"></stop>' +
         '<stop offset="100%" stop-color="rgba(201,163,107,0.08)"></stop>' +
       '</linearGradient>' +
+      '<radialGradient id="cfCursorHalo">' +
+        '<stop offset="0%" stop-color="rgba(107,227,164,0.55)"></stop>' +
+        '<stop offset="100%" stop-color="rgba(107,227,164,0)"></stop>' +
+      '</radialGradient>' +
       '</defs>';
 
     var body = '';
@@ -737,10 +791,11 @@ body::after {
     var cursorHour = scrubHour !== null ? scrubHour : nowHourFloat();
     var cursorPt = valueAtHour(cursorHour);
     var cx = xFor(cursorHour), cy = yFor(cursorPt.total);
-    var cursor = '<line x1="' + cx + '" y1="' + padTop + '" x2="' + cx + '" y2="' + (H - padBottom) + '" stroke="rgba(255,255,255,0.28)" stroke-width="1" stroke-dasharray="3,3"></line>' +
-      '<circle cx="' + cx + '" cy="' + cy + '" r="4.5" fill="#FAFAFA" stroke="var(--accent)" stroke-width="2"></circle>';
+    var cursor = '<line x1="' + cx + '" y1="' + padTop + '" x2="' + cx + '" y2="' + (H - padBottom) + '" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="3,3"></line>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="16" fill="url(#cfCursorHalo)"></circle>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="5.5" fill="#FAFAFA" stroke="var(--success)" stroke-width="2.5"></circle>';
 
-    svg.innerHTML = defs + nightRects + body + cursor;
+    svg.innerHTML = defs + nightRects + peakRects + body + cursor;
   }
 
   function renderDay() {
@@ -839,8 +894,8 @@ body::after {
   function renderSmartTiming() {
     var prod = findProductiveWindow();
     if (prod) {
-      $('timingProductive').textContent = fmtTime12(prod.peakT);
-      $('timingProductiveSub').textContent = fmtTime12(prod.startT) + '–' + fmtTime12(prod.endT) + ' · score ' + Math.round(prod.score);
+      $('timingProductive').textContent = 'in ' + hoursUntilLabel(prod.peakT);
+      $('timingProductiveSub').textContent = 'Peaks ' + fmtTime12(prod.peakT) + ' · window ' + fmtTime12(prod.startT) + '–' + fmtTime12(prod.endT);
     } else {
       $('timingProductive').textContent = '—';
       $('timingProductiveSub').textContent = 'Not enough data yet';
@@ -848,20 +903,21 @@ body::after {
 
     var crash = findCrash();
     if (crash) {
-      $('timingCrash').textContent = fmtTime12(crash.startT);
-      $('timingCrashSub').textContent = 'Drops to ~' + Math.round(crash.low) + ' by ' + fmtTime12(crash.endT);
+      $('timingCrash').textContent = 'in ' + hoursUntilLabel(crash.startT);
+      $('timingCrashSub').textContent = fmtTime12(crash.startT) + ' · drops to ~' + Math.round(crash.low);
     } else {
       $('timingCrash').textContent = 'None';
       $('timingCrashSub').textContent = 'No significant crash predicted';
     }
 
     var cutoff = coffeeCutoffHour();
-    $('timingCutoff').textContent = fmtTime12(cutoff);
-    $('timingCutoffSub').textContent = 'To stay under 30mg by bedtime (' + fmtTime12(garminCtx.bedtime) + ')';
+    $('timingCutoff').textContent = 'in ' + hoursUntilLabel(cutoff);
+    $('timingCutoffSub').textContent = fmtTime12(cutoff) + ' · to stay under 30mg by bedtime (' + fmtTime12(garminCtx.bedtime) + ')';
 
+    var bedtimeSrc = garminCtx.connected ? "your Garmin's" : "an assumed (11 PM)";
     var tips = [];
     tips.push('Front-load your caffeine earlier in the day — a dose after ' + fmtTime12(garminCtx.bedtime - 8) + ' is still meaningfully active at bedtime.');
-    tips.push('Cut off caffeine by ' + fmtTime12(cutoff) + ' to protect tonight’s sleep (bedtime ' + fmtTime12(garminCtx.bedtime) + ').');
+    tips.push('Cut off caffeine by ' + fmtTime12(cutoff) + ' to protect tonight’s sleep, based on ' + bedtimeSrc + ' bedtime of ' + fmtTime12(garminCtx.bedtime) + '.');
     tips.push('Stay hydrated — caffeine is mildly diuretic, especially at higher doses.');
     if (crash) tips.push('Beat the ' + fmtTime12(crash.startT) + ' dip with daylight or a short walk instead of another dose.');
     if (garminCtx.bodyBattery != null && garminCtx.bodyBattery < 25) {
@@ -1087,7 +1143,7 @@ body::after {
   // sync hasn't run yet, or you haven't set up Garmin sync at all, this
   // just stays at the defaults.
   async function loadGarminContext() {
-    var ctx = { wake: 7, bedtime: 23, bodyBattery: null };
+    var ctx = { wake: 7, bedtime: 23, bodyBattery: null, connected: false };
     if (!window.supabase) return ctx;
     try {
       var supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1100,6 +1156,7 @@ body::after {
       var res = await Promise.race([query, timeout]);
       var d = res && res.data && res.data.data;
       if (!d) return ctx;
+      ctx.connected = !!d.lastSynced;
       if (typeof d.bodyBattery === 'number') ctx.bodyBattery = d.bodyBattery;
       if (d.sleepEnd) { var wd = new Date(d.sleepEnd); ctx.wake = wd.getUTCHours() + wd.getUTCMinutes() / 60; }
       if (d.sleepStart) { var bd = new Date(d.sleepStart); ctx.bedtime = bd.getUTCHours() + bd.getUTCMinutes() / 60; }
