@@ -100,6 +100,26 @@ main {
   .water-iframe { height: 780px; }
 }
 
+.caffeine-quick { margin-top: 40px; }
+.caffeine-quick-card {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px;
+  text-decoration: none; color: inherit;
+  transition: background 0.15s, transform 0.15s;
+}
+.caffeine-quick-card:hover { transform: translateY(-1px); }
+.caffeine-quick-num {
+  font-size: 26px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary); line-height: 1;
+}
+.caffeine-quick-unit { font-size: 13px; font-weight: 600; color: var(--text-tertiary); margin-left: 4px; }
+.caffeine-quick-cta {
+  flex-shrink: 0;
+  font-size: 13px; font-weight: 700;
+  color: var(--accent); white-space: nowrap;
+}
+
 .stack-card {
   background: var(--bg-card);
   border-radius: 16px;
@@ -511,6 +531,17 @@ main {
         <button id="stackAddBtn" class="stack-add-btn">+ Add</button>
       </div>
     </div>
+  </div>
+
+  <div class="section caffeine-quick">
+    <div class="section-title">Caffeine</div>
+    <a href="caffeine.html" class="stack-card caffeine-quick-card">
+      <div>
+        <div class="sf-eyebrow">Today</div>
+        <div><span class="caffeine-quick-num" id="caffeineQuickTotal">0</span><span class="caffeine-quick-unit">mg</span></div>
+      </div>
+      <span class="caffeine-quick-cta">Open Tracker →</span>
+    </a>
   </div>
 
   <section id="water" class="water-embed">
@@ -1042,11 +1073,34 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'health',
-    syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1'],
+    syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1', 'caffeine_log_v1'],
     syncedPrefixes: ['stack:taken:'],
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });
 });
+</script>
+
+<script>
+(function () {
+  'use strict';
+  function todayKeyLocal() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function renderCaffeineQuick() {
+    const el = document.getElementById('caffeineQuickTotal');
+    if (!el) return;
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem('caffeine_log_v1')) || []; } catch (e) {}
+    const today = todayKeyLocal();
+    const total = log.filter(e => e && e.dateKey === today).reduce((s, e) => s + (e.mg || 0), 0);
+    el.textContent = Math.round(total);
+  }
+  renderCaffeineQuick();
+  window.addEventListener('storage', renderCaffeineQuick);
+  window.addEventListener('focus', renderCaffeineQuick);
+  setInterval(renderCaffeineQuick, 60 * 1000);
+})();
 </script>
 
 </body>

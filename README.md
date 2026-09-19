@@ -17,6 +17,7 @@ Open any `.html` file directly in your browser — no build step, no install.
 | [index.html](index.html) | Bento grid hub — the home page, links out to every tracker |
 | [main.html](main.html) | Goals tracker (Day Ring, Goal Ticker, To Do list) |
 | [health.html](health.html) | Supplement / daily stack tracker |
+| [caffeine.html](caffeine.html) | Caffeine tracker — searchable drink database, peak/comedown/clearance estimates, daily limit bar |
 | [po-water.html](po-water.html) | Water intake tracker |
 | [finance.html](finance.html) | Finances |
 | [gym.html](gym.html) | Progressive overload gym tracker |
