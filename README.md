@@ -94,6 +94,12 @@ It uses the unofficial [`garminconnect`](https://pypi.org/project/garminconnect/
 
 **Note on credentials:** never put your Garmin email/password (or the Supabase service_role key) anywhere in this repo — Vercel env vars are the only place they should live. The function deliberately re-logs-in to Garmin every run instead of caching a session token in Supabase, to avoid adding another sensitive value to persist and protect.
 
+**Manual sync from the dashboard:** the gear icon on `index.html` opens a "Your Data" panel with a "Sync now" button that calls `/api/garmin-sync` directly using your own logged-in Supabase session (in addition to the `CRON_SECRET` path used by the scheduled job) — verified server-side by asking Supabase's `/auth/v1/user` endpoint whether the token is real, so no extra secret is needed for this path.
+
+## Settings panel
+
+The gear icon on `index.html` opens a "Your Data" modal for the profile fields the other pages read from (`po_water_v1.profile` — height, weight, age, sex, active hours/week), plus the Garmin card described above. It merges into `po_water_v1` rather than overwriting it, so your water logs and everything else in that object are untouched, and syncs under the same `'health'` appKey as `health.html`/`po-water.html`.
+
 ## Building from scratch
 
 [BUILD_DASHBOARD.md](BUILD_DASHBOARD.md) is the prompt I gave Claude to generate `main.html` (the goals tracker) — paste it into Claude if you want to rebuild that page yourself.

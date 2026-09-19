@@ -67,8 +67,12 @@ body::after {
 }
 
 /* ===== page title ===== */
+.dash-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 18px;
+}
 .dash-title {
-  margin: 0 0 18px;
+  margin: 0;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -79,6 +83,126 @@ body::after {
   color: transparent;
 }
 @media (max-width: 480px) { .dash-title { font-size: 22px; } }
+
+.settings-btn {
+  width: 42px; height: 42px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary); font-size: 19px; line-height: 1;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.12s;
+}
+.settings-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.settings-btn:active { transform: rotate(-16deg) scale(0.92); }
+
+/* ===== Settings modal ===== */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.modal-bg.show { opacity: 1; pointer-events: auto; }
+.modal {
+  width: 100%; max-width: 440px; max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(18, 18, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 22px;
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  transform: scale(0.96) translateY(10px);
+  transition: transform 0.2s ease;
+}
+.modal-bg.show .modal { transform: scale(1) translateY(0); }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.modal-title { margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.modal-close {
+  border: 0; background: transparent; color: var(--text-tertiary);
+  font-size: 22px; line-height: 1; cursor: pointer; padding: 4px;
+  transition: color 0.15s;
+}
+.modal-close:hover { color: var(--text-primary); }
+
+.settings-field { margin-bottom: 14px; }
+.settings-field-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.settings-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.gm-input {
+  width: 100%; padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; background: rgba(0, 0, 0, 0.28);
+  color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.gm-input::placeholder { color: var(--text-tertiary); }
+.gm-input:focus { border-color: rgba(255, 255, 255, 0.28); background: rgba(0, 0, 0, 0.36); }
+.settings-input-row { display: flex; gap: 8px; }
+.settings-input-row .gm-input { flex: 1; min-width: 0; }
+
+.toggle-group {
+  display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28); border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.toggle-btn {
+  border: 0; background: transparent; color: var(--text-tertiary);
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  padding: 7px 13px; border-radius: 7px; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.toggle-btn.is-active { background: rgba(255, 255, 255, 0.10); color: var(--text-primary); }
+
+.gm-add {
+  padding: 11px 20px; border: 0; border-radius: 12px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
+  color: #0A0A0B; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 8px rgba(0, 0, 0, 0.35), 0 8px 22px rgba(0, 0, 0, 0.25);
+  transition: transform 0.1s, filter 0.15s;
+}
+.gm-add:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.gm-add:active { transform: translateY(0); }
+.gm-ghost {
+  width: 100%; padding: 11px 18px; border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04); color: var(--text-primary);
+  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.gm-ghost:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.18); }
+.gm-ghost:disabled { opacity: 0.6; cursor: default; }
+
+.settings-save-row { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+.settings-saved {
+  font-size: 12.5px; font-weight: 700; color: var(--success);
+  opacity: 0; transition: opacity 0.25s ease;
+}
+.settings-saved.show { opacity: 1; }
+
+.settings-divider { height: 1px; background: rgba(255, 255, 255, 0.08); margin: 20px 0; }
+
+.settings-device-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.settings-device-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary); flex-shrink: 0; }
+.settings-device-dot.connected { background: var(--success); box-shadow: 0 0 8px rgba(107, 227, 164, 0.6); }
+.settings-device-status { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.settings-device-synced { font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 12px; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.stat { background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 10px; text-align: center; }
+.stat-num { font-size: 16px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.stat-label { margin-top: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
 
 /* ===== Bento grid ===== */
 .bento-grid {
@@ -175,7 +299,10 @@ body::after {
 <body>
 <div class="page">
 
-  <h1 class="dash-title">Dashboard</h1>
+  <div class="dash-header">
+    <h1 class="dash-title">Dashboard</h1>
+    <button class="settings-btn" id="settingsBtn" type="button" aria-label="Settings">⚙️</button>
+  </div>
 
   <div class="bento-grid">
     <a href="main.html" class="bento-tile big" style="--accent:#6BE3A4">
@@ -256,6 +383,347 @@ body::after {
     </a>
   </div>
 
+  <!-- ===== Settings modal ===== -->
+  <div class="modal-bg" id="settingsModalBg">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Your Data</h2>
+        <button class="modal-close" id="settingsClose" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div class="settings-field-row">
+        <span class="settings-label">Height</span>
+        <div class="toggle-group" id="heightUnitToggle">
+          <button type="button" class="toggle-btn is-active" data-unit="cm">cm</button>
+          <button type="button" class="toggle-btn" data-unit="ftin">ft/in</button>
+        </div>
+      </div>
+      <div class="settings-field" id="heightCmWrap">
+        <input class="gm-input" id="heightCm" type="number" min="0" step="0.1" placeholder="175">
+      </div>
+      <div class="settings-field settings-input-row" id="heightFtInWrap" style="display:none">
+        <input class="gm-input" id="heightFt" type="number" min="0" step="1" placeholder="5 ft">
+        <input class="gm-input" id="heightIn" type="number" min="0" step="1" placeholder="9 in">
+      </div>
+
+      <div class="settings-field-row">
+        <span class="settings-label">Weight</span>
+        <div class="toggle-group" id="weightUnitToggle">
+          <button type="button" class="toggle-btn is-active" data-unit="kg">kg</button>
+          <button type="button" class="toggle-btn" data-unit="lb">lb</button>
+        </div>
+      </div>
+      <div class="settings-field">
+        <input class="gm-input" id="weightVal" type="number" min="0" step="0.1" placeholder="75">
+      </div>
+
+      <div class="settings-field">
+        <div class="settings-label" style="margin-bottom:8px">Age</div>
+        <input class="gm-input" id="ageVal" type="number" min="0" step="1" placeholder="25">
+      </div>
+
+      <div class="settings-field-row">
+        <span class="settings-label">Sex</span>
+        <div class="toggle-group" id="sexToggle">
+          <button type="button" class="toggle-btn is-active" data-sex="m">Male</button>
+          <button type="button" class="toggle-btn" data-sex="f">Female</button>
+        </div>
+      </div>
+
+      <div class="settings-field">
+        <div class="settings-label" style="margin-bottom:8px">Active hours / week</div>
+        <input class="gm-input" id="activeHrs" type="number" min="0" step="0.5" placeholder="5">
+      </div>
+
+      <div class="settings-save-row">
+        <button class="gm-add" id="settingsSave" type="button">Save</button>
+        <span class="settings-saved" id="settingsSaved">Saved ✓</span>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-device-head">
+        <span class="settings-device-dot" id="deviceDot"></span>
+        <span class="settings-device-status" id="deviceStatus">Checking…</span>
+      </div>
+      <div class="settings-device-synced" id="deviceSyncedAgo"></div>
+      <div class="stat-grid" id="deviceStats" style="display:none">
+        <div class="stat"><div class="stat-num" id="devBattery">—</div><div class="stat-label">Body Battery</div></div>
+        <div class="stat"><div class="stat-num" id="devSleep">—</div><div class="stat-label">Sleep Score</div></div>
+        <div class="stat"><div class="stat-num" id="devRhr">—</div><div class="stat-label">Resting HR</div></div>
+      </div>
+      <button class="gm-ghost" id="deviceSyncBtn" type="button">Sync now</button>
+    </div>
+  </div>
+
 </div>
+<script>
+(function () {
+  'use strict';
+
+  var WATER_KEY = 'po_water_v1';
+  var SUPABASE_URL = 'https://qigzwmiypboijszfrhkm.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_EAe3cddNpZ8vdw17a8kl0w_zDu9CfDb';
+
+  function $(id) { return document.getElementById(id); }
+
+  // --- shared water/profile state (mirrors topbar.js's defaultWaterState,
+  // extended with height, which the original schema didn't have) --------
+  function defaultWaterState() {
+    return {
+      unit: 'bottle', bottleMl: 500, glassMl: 250, weightUnit: 'kg',
+      profile: { weightKg: 75, age: 25, sex: 'm', activityHrsPerWeek: 5, heightCm: 175, heightUnit: 'cm' },
+      caffeineMgPerDay: 200, substances: [], logs: {}
+    };
+  }
+  function loadWaterState() {
+    var def = defaultWaterState();
+    try {
+      var raw = localStorage.getItem(WATER_KEY);
+      if (!raw) return def;
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return def;
+      return Object.assign({}, def, parsed, { profile: Object.assign({}, def.profile, parsed.profile || {}) });
+    } catch (e) { return def; }
+  }
+
+  // --- unit conversions --------------------------------------------------
+  function kgToLb(kg) { return kg * 2.20462; }
+  function lbToKg(lb) { return lb / 2.20462; }
+  function cmToFtIn(cm) {
+    var totalIn = cm / 2.54;
+    var ft = Math.floor(totalIn / 12);
+    var inch = Math.round(totalIn - ft * 12);
+    if (inch === 12) { ft += 1; inch = 0; }
+    return { ft: ft, inch: inch };
+  }
+  function ftInToCm(ft, inch) { return (ft * 12 + inch) * 2.54; }
+  function round1(n) { return Math.round(n * 10) / 10; }
+
+  // --- modal open/close ----------------------------------------------
+  var modalBg = $('settingsModalBg');
+  var weightUnit = 'kg';
+  var heightUnit = 'cm';
+  var sex = 'm';
+
+  function openModal() {
+    prefillFromState();
+    modalBg.classList.add('show');
+    loadDeviceStatus(true);
+  }
+  function closeModal() { modalBg.classList.remove('show'); }
+
+  $('settingsBtn').addEventListener('click', openModal);
+  $('settingsClose').addEventListener('click', closeModal);
+  modalBg.addEventListener('click', function (e) { if (e.target === modalBg) closeModal(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modalBg.classList.contains('show')) closeModal();
+  });
+
+  function setActiveToggle(groupEl, attr, value) {
+    groupEl.querySelectorAll('.toggle-btn').forEach(function (b) {
+      b.classList.toggle('is-active', b.dataset[attr] === value);
+    });
+  }
+
+  function prefillFromState() {
+    var state = loadWaterState();
+    var p = state.profile;
+
+    weightUnit = state.weightUnit === 'lb' ? 'lb' : 'kg';
+    setActiveToggle($('weightUnitToggle'), 'unit', weightUnit);
+    var w = p.weightKg || 0;
+    $('weightVal').value = round1(weightUnit === 'lb' ? kgToLb(w) : w);
+
+    heightUnit = p.heightUnit === 'ft' ? 'ftin' : 'cm';
+    setActiveToggle($('heightUnitToggle'), 'unit', heightUnit);
+    var hCm = p.heightCm || 0;
+    if (heightUnit === 'ftin') {
+      var fi = cmToFtIn(hCm);
+      $('heightFt').value = fi.ft;
+      $('heightIn').value = fi.inch;
+      $('heightCmWrap').style.display = 'none';
+      $('heightFtInWrap').style.display = 'flex';
+    } else {
+      $('heightCm').value = round1(hCm);
+      $('heightCmWrap').style.display = 'block';
+      $('heightFtInWrap').style.display = 'none';
+    }
+
+    $('ageVal').value = p.age || '';
+    sex = p.sex === 'f' ? 'f' : 'm';
+    setActiveToggle($('sexToggle'), 'sex', sex);
+    $('activeHrs').value = p.activityHrsPerWeek || '';
+  }
+
+  // --- weight unit toggle: convert the shown value in place --------------
+  $('weightUnitToggle').addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    var newUnit = btn.dataset.unit;
+    if (newUnit === weightUnit) return;
+    var val = parseFloat($('weightVal').value);
+    if (!isNaN(val)) {
+      $('weightVal').value = round1(newUnit === 'lb' ? kgToLb(val) : lbToKg(val));
+    }
+    weightUnit = newUnit;
+    setActiveToggle($('weightUnitToggle'), 'unit', weightUnit);
+  });
+
+  // --- height unit toggle: convert the shown value in place --------------
+  $('heightUnitToggle').addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    var newUnit = btn.dataset.unit;
+    if (newUnit === heightUnit) {
+      // still allow re-showing the right wrap if clicked again
+    } else if (newUnit === 'ftin') {
+      var cmVal = parseFloat($('heightCm').value) || 0;
+      var fi = cmToFtIn(cmVal);
+      $('heightFt').value = fi.ft;
+      $('heightIn').value = fi.inch;
+    } else {
+      var ft = parseFloat($('heightFt').value) || 0;
+      var inch = parseFloat($('heightIn').value) || 0;
+      $('heightCm').value = round1(ftInToCm(ft, inch));
+    }
+    heightUnit = newUnit;
+    setActiveToggle($('heightUnitToggle'), 'unit', heightUnit);
+    $('heightCmWrap').style.display = heightUnit === 'cm' ? 'block' : 'none';
+    $('heightFtInWrap').style.display = heightUnit === 'ftin' ? 'flex' : 'none';
+  });
+
+  $('sexToggle').addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    sex = btn.dataset.sex;
+    setActiveToggle($('sexToggle'), 'sex', sex);
+  });
+
+  // --- save: merge into po_water_v1, never touch logs/other fields -------
+  $('settingsSave').addEventListener('click', function () {
+    var raw = null;
+    try { raw = localStorage.getItem(WATER_KEY); } catch (e) {}
+    var state;
+    try { state = raw ? JSON.parse(raw) : null; } catch (e) { state = null; }
+    if (!state || typeof state !== 'object') state = defaultWaterState();
+    state.profile = state.profile || {};
+
+    var weightRaw = parseFloat($('weightVal').value) || 0;
+    state.profile.weightKg = weightUnit === 'lb' ? lbToKg(weightRaw) : weightRaw;
+    state.weightUnit = weightUnit;
+
+    var heightCm;
+    if (heightUnit === 'ftin') {
+      var ft = parseFloat($('heightFt').value) || 0;
+      var inch = parseFloat($('heightIn').value) || 0;
+      heightCm = ftInToCm(ft, inch);
+    } else {
+      heightCm = parseFloat($('heightCm').value) || 0;
+    }
+    state.profile.heightCm = heightCm;
+    state.profile.heightUnit = heightUnit === 'ftin' ? 'ft' : 'cm';
+
+    state.profile.age = parseInt($('ageVal').value, 10) || 0;
+    state.profile.sex = sex;
+    state.profile.activityHrsPerWeek = parseFloat($('activeHrs').value) || 0;
+
+    localStorage.setItem(WATER_KEY, JSON.stringify(state));
+
+    var savedEl = $('settingsSaved');
+    savedEl.classList.add('show');
+    setTimeout(function () { savedEl.classList.remove('show'); }, 1800);
+  });
+
+  // --- Garmin device card -------------------------------------------------
+  var lastGarminData = null;
+  function timeAgo(iso) {
+    var ms = Date.now() - new Date(iso).getTime();
+    var mins = Math.round(ms / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    return Math.round(hrs / 24) + 'd ago';
+  }
+
+  function renderDeviceCard(connected, data) {
+    var dot = $('deviceDot'), status = $('deviceStatus'), synced = $('deviceSyncedAgo');
+    var stats = $('deviceStats'), syncBtn = $('deviceSyncBtn');
+    if (connected && data) {
+      dot.classList.add('connected');
+      status.textContent = 'Connected';
+      synced.textContent = data.lastSynced ? 'Last synced ' + timeAgo(data.lastSynced) : '';
+      stats.style.display = 'grid';
+      $('devBattery').textContent = data.bodyBattery != null ? data.bodyBattery : '—';
+      $('devSleep').textContent = data.sleepScore != null ? data.sleepScore : '—';
+      $('devRhr').textContent = data.restingHr != null ? data.restingHr : '—';
+      syncBtn.textContent = 'Sync now';
+      syncBtn.onclick = triggerGarminSync;
+    } else {
+      dot.classList.remove('connected');
+      status.textContent = 'Not connected';
+      synced.textContent = '';
+      stats.style.display = 'none';
+      syncBtn.textContent = 'Connect on Health page';
+      syncBtn.onclick = function () { window.location.href = 'health.html'; };
+    }
+  }
+
+  async function loadDeviceStatus(autoSync) {
+    if (!window.supabase) { renderDeviceCard(false, null); return; }
+    try {
+      var supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      var query = supa.from('app_state').select('data').eq('key', 'garmin').maybeSingle();
+      var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(null); }, 4000); });
+      var res = await Promise.race([query, timeout]);
+      var d = res && res.data && res.data.data;
+      if (d && d.lastSynced) {
+        lastGarminData = d;
+        renderDeviceCard(true, d);
+        if (autoSync) triggerGarminSync();
+      } else {
+        renderDeviceCard(false, null);
+      }
+    } catch (e) {
+      renderDeviceCard(false, null);
+    }
+  }
+
+  async function triggerGarminSync() {
+    var syncBtn = $('deviceSyncBtn');
+    if (!window.supabase) return;
+    syncBtn.disabled = true;
+    var prevLabel = syncBtn.textContent;
+    syncBtn.textContent = 'Syncing…';
+    try {
+      var supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      var sessRes = await supa.auth.getSession();
+      var token = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token;
+      if (!token) { syncBtn.disabled = false; syncBtn.textContent = prevLabel; return; }
+      var res = await fetch('/api/garmin-sync', { headers: { Authorization: 'Bearer ' + token } });
+      if (res.ok) {
+        var json = await res.json();
+        if (json && json.data) {
+          lastGarminData = json.data;
+          renderDeviceCard(true, json.data);
+        }
+      }
+    } catch (e) {}
+    syncBtn.disabled = false;
+    if (syncBtn.textContent === 'Syncing…') syncBtn.textContent = 'Sync now';
+  }
+
+  // --- cloud sync: keep the shared profile in po_water_v1 synced --------
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof initCloudSync !== 'function') return;
+    initCloudSync({
+      appKey: 'health',
+      syncedKeys: [WATER_KEY],
+      onApplied: function () {}
+    });
+  });
+})();
+</script>
 </body>
 </html>

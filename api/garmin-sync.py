@@ -7,6 +7,13 @@ pulls today's resting heart rate / body battery / stress / sleep, and
 writes them into the same public.app_state Supabase table the rest of
 the dashboard already reads from (key = 'garmin').
 
+Requests are authorized two ways: the CRON_SECRET bearer token (used by
+the scheduled GitHub Actions job), or a valid Supabase Auth session
+token for our one dashboard user (used by the "Sync now" button in the
+settings panel - verified by asking Supabase's own /auth/v1/user
+endpoint whether the token is real, so no new secret is needed for
+that path and nothing here has to parse/verify JWTs itself).
+
 Required Vercel env vars:
   GARMIN_EMAIL              — your Garmin Connect login email
   GARMIN_PASSWORD           — your Garmin Connect login password
@@ -39,6 +46,27 @@ import json
 import datetime
 
 SUPABASE_URL = 'https://qigzwmiypboijszfrhkm.supabase.co'
+SUPABASE_ANON_KEY = 'sb_publishable_EAe3cddNpZ8vdw17a8kl0w_zDu9CfDb'
+
+
+def is_authorized(auth_header):
+    cron_secret = os.environ.get('CRON_SECRET')
+    if cron_secret and auth_header == 'Bearer ' + cron_secret:
+        return True
+    if auth_header.startswith('Bearer '):
+        token = auth_header[len('Bearer '):]
+        try:
+            import requests
+            resp = requests.get(
+                SUPABASE_URL + '/auth/v1/user',
+                headers={'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_ANON_KEY},
+                timeout=8,
+            )
+            if resp.status_code == 200:
+                return True
+        except Exception:
+            pass
+    return False
 
 
 def push_to_supabase(data):
@@ -122,9 +150,8 @@ def fetch_garmin_data():
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        cron_secret = os.environ.get('CRON_SECRET')
         auth_header = self.headers.get('Authorization', '')
-        if cron_secret and auth_header != 'Bearer ' + cron_secret:
+        if not is_authorized(auth_header):
             self.send_response(401)
             self.end_headers()
             self.wfile.write(b'Unauthorized')
