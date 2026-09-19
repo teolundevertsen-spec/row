@@ -120,6 +120,26 @@ main {
   color: var(--accent); white-space: nowrap;
 }
 
+.garmin-row { display: flex; gap: 10px; }
+.garmin-stat {
+  flex: 1; text-align: center;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; padding: 12px;
+}
+.garmin-stat-num {
+  font-size: 22px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary); line-height: 1.15;
+}
+.garmin-stat-label {
+  margin-top: 4px;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.garmin-synced { margin-top: 10px; font-size: 11px; color: var(--text-tertiary); text-align: center; }
+
 .stack-card {
   background: var(--bg-card);
   border-radius: 16px;
@@ -491,6 +511,16 @@ main {
 <body>
 
 <main>
+  <div class="section-title">Vitals</div>
+  <div class="stack-card" style="margin-bottom:20px">
+    <div class="garmin-row">
+      <div class="garmin-stat"><div class="garmin-stat-num" id="garminRhr">—</div><div class="garmin-stat-label">Resting HR</div></div>
+      <div class="garmin-stat"><div class="garmin-stat-num" id="garminBattery">—</div><div class="garmin-stat-label">Body Battery</div></div>
+      <div class="garmin-stat"><div class="garmin-stat-num" id="garminSleep">—</div><div class="garmin-stat-label">Sleep</div></div>
+    </div>
+    <div class="garmin-synced" id="garminSynced">Not connected yet</div>
+  </div>
+
   <div class="section-title">Daily Stack</div>
 
   <div class="stack-card">
@@ -1100,6 +1130,49 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('storage', renderCaffeineQuick);
   window.addEventListener('focus', renderCaffeineQuick);
   setInterval(renderCaffeineQuick, 60 * 1000);
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var SUPABASE_URL = 'https://qigzwmiypboijszfrhkm.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_EAe3cddNpZ8vdw17a8kl0w_zDu9CfDb';
+
+  function timeAgo(iso) {
+    var ms = Date.now() - new Date(iso).getTime();
+    var mins = Math.round(ms / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    return Math.round(hrs / 24) + 'd ago';
+  }
+
+  function renderGarmin() {
+    fetch(SUPABASE_URL + '/rest/v1/app_state?key=eq.garmin&select=data,updated_at', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) {
+        var row = rows && rows[0];
+        var syncedEl = document.getElementById('garminSynced');
+        if (!row || !row.data) {
+          syncedEl.textContent = 'Not connected yet — see README for Garmin setup';
+          return;
+        }
+        var d = row.data;
+        document.getElementById('garminRhr').textContent = d.restingHr != null ? d.restingHr : '—';
+        document.getElementById('garminBattery').textContent = d.bodyBattery != null ? d.bodyBattery : '—';
+        document.getElementById('garminSleep').textContent = d.sleepHours != null ? d.sleepHours + 'h' : '—';
+        syncedEl.textContent = 'Synced ' + timeAgo(d.lastSynced || row.updated_at);
+      })
+      .catch(function () {
+        document.getElementById('garminSynced').textContent = "Couldn't reach sync data";
+      });
+  }
+  renderGarmin();
+  setInterval(renderGarmin, 5 * 60 * 1000);
 })();
 </script>
 
