@@ -82,6 +82,19 @@
   font-size: 20px; line-height: 1;
   filter: grayscale(100%) brightness(1.4); opacity: 0.85;
 }
+.topbar-back-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 42px; flex-shrink: 0;
+  margin-right: auto;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px; text-decoration: none;
+  color: #FAFAFA; font-size: 20px; line-height: 1; font-weight: 700;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.topbar-back-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.topbar-right { display: flex; align-items: stretch; gap: 8px; }
 .bottombar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
   display: flex; justify-content: space-around; align-items: stretch;
@@ -118,6 +131,7 @@ body.has-bottombar {
   .topbar-water-add { width: 40px; font-size: 18px; }
   .topbar-finance-btn { width: 40px; height: 38px; }
   .topbar-finance-icon { font-size: 18px; }
+  .topbar-back-btn { width: 40px; height: 38px; font-size: 18px; }
   .bottombar-tab-icon { font-size: 22px; }
   .bottombar-tab { font-size: 10px; }
 }
@@ -150,16 +164,19 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
 
   const topbarHtml = `
 <header class="topbar" id="topbar" role="navigation" aria-label="Quick actions">
-  <div class="topbar-water-wrap">
-    <a href="health.html#water" class="topbar-water-pill" id="topbarWater" aria-label="Water progress">
-      <span class="topbar-pill-dot"></span>
-      <span class="topbar-pill-count" id="topbarWaterCount">0/0</span>
+  <a href="index.html" class="topbar-back-btn" id="topbarBack" aria-label="Back to dashboard">←</a>
+  <div class="topbar-right">
+    <div class="topbar-water-wrap">
+      <a href="health.html#water" class="topbar-water-pill" id="topbarWater" aria-label="Water progress">
+        <span class="topbar-pill-dot"></span>
+        <span class="topbar-pill-count" id="topbarWaterCount">0/0</span>
+      </a>
+      <button class="topbar-water-add" id="topbarWaterAdd" aria-label="Log one drink" type="button">+</button>
+    </div>
+    <a href="finance.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Finance">
+      <span class="topbar-finance-icon">📊</span>
     </a>
-    <button class="topbar-water-add" id="topbarWaterAdd" aria-label="Log one drink" type="button">+</button>
   </div>
-  <a href="finance.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Finance">
-    <span class="topbar-finance-icon">📊</span>
-  </a>
 </header>`;
 
   const bottombarHtml = `
@@ -182,6 +199,10 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   function isEmbedded() {
     try { return window.self !== window.top; } catch (e) { return true; }
   }
+  function isHubPage() {
+    const p = (window.location.pathname || '').toLowerCase();
+    return p.endsWith('/index.html') || p.endsWith('index.html') || p === '/' || p.endsWith('/');
+  }
   function shouldShowChrome() { return !isFinancePage() && !isEmbedded(); }
   function currentPageKey() {
     const p = (window.location.pathname || '').toLowerCase();
@@ -201,6 +222,10 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     const topWrap = document.createElement('div');
     topWrap.innerHTML = topbarHtml.trim();
     document.body.insertBefore(topWrap.firstChild, document.body.firstChild);
+    if (isHubPage()) {
+      const backBtn = document.getElementById('topbarBack');
+      if (backBtn) backBtn.remove();
+    }
     const bottomWrap = document.createElement('div');
     bottomWrap.innerHTML = bottombarHtml.trim();
     document.body.appendChild(bottomWrap.firstChild);
