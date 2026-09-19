@@ -107,21 +107,20 @@ body::after {
 .day-ring-center {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.day-ring-num { font-size: 34px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; }
-.day-ring-state { margin-top: 4px; font-size: 13px; font-weight: 700; font-style: italic; color: var(--success); }
-.day-ring-state.amber { color: var(--warning); }
-.day-ring-state.red { color: var(--danger); }
+.day-ring-num { font-size: 32px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; }
 .day-header-info { flex: 1; min-width: 0; }
-.day-header-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
-.day-header-hint { font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 6px; }
+.day-header-state { font-size: 19px; font-weight: 700; font-style: italic; color: var(--success); line-height: 1.2; }
+.day-header-state.amber { color: var(--warning); }
+.day-header-state.red { color: var(--danger); }
+.day-header-label { margin-top: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
+.day-header-hint { margin-top: 4px; font-size: 12px; color: var(--text-tertiary); display: flex; align-items: center; gap: 6px; }
 .day-header-hint::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--text-tertiary); flex-shrink: 0; }
 
 .chart-section-row {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
   flex-wrap: wrap; margin-bottom: 12px;
 }
-.chart-section-title { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
-.chart-section-sub { margin-top: 2px; font-size: 11px; color: var(--text-tertiary); line-height: 1.4; max-width: 280px; }
+.chart-section-sub { font-size: 11.5px; color: var(--text-tertiary); line-height: 1.5; max-width: 340px; }
 
 .chart-toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
 .chart-toggle-btn {
@@ -144,11 +143,14 @@ body::after {
 .stat { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; }
 .stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; }
 .stat-num { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+.timing-num-green { color: var(--success); }
+.timing-num-amber { color: var(--warning); }
+.timing-num-blue { color: #7DD3FC; }
 .timing-sub { margin-top: 4px; font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
 
 .tips-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .tips-list li { display: flex; gap: 10px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
-.tips-list li::before { content: '·'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+.tips-list li .tip-icon { flex-shrink: 0; }
 
 /* ===== Today ===== */
 .gm-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
@@ -284,20 +286,17 @@ body::after {
           </svg>
           <div class="day-ring-center">
             <div class="day-ring-num" id="dayRingNum">—</div>
-            <div class="day-ring-state" id="dayRingState">—</div>
           </div>
         </div>
         <div class="day-header-info">
+          <div class="day-header-state" id="dayHeaderState">—</div>
           <div class="day-header-label" id="dayHeaderLabel">RIGHT NOW</div>
-          <div class="day-header-hint">Hover the curve</div>
+          <div class="day-header-hint">Hover / drag the curve</div>
         </div>
       </div>
 
       <div class="chart-section-row">
-        <div>
-          <div class="chart-section-title">Today's Coffee Score</div>
-          <div class="chart-section-sub">Your predicted score, hour by hour. Hover or drag to scrub.</div>
-        </div>
+        <div class="chart-section-sub">Your predicted energy, hour by hour — built from your caffeine, your body clock, and how long you've been awake.</div>
         <div class="chart-toggle" role="tablist">
           <button type="button" class="chart-toggle-btn is-active" data-mode="line">LINE</button>
           <button type="button" class="chart-toggle-btn" data-mode="bars">BARS</button>
@@ -313,7 +312,7 @@ body::after {
       </div>
 
       <div class="day-footer-band">
-        <div><div class="day-footer-label">Peak focus window</div><div class="day-footer-val" id="footerPeak">—</div></div>
+        <div><div class="day-footer-label">Peak focus</div><div class="day-footer-val" id="footerPeak">—</div></div>
         <div><div class="day-footer-label">Predicted crash</div><div class="day-footer-val" id="footerCrash">—</div></div>
         <div><div class="day-footer-label">Last coffee by</div><div class="day-footer-val" id="footerCutoff">—</div></div>
       </div>
@@ -326,17 +325,17 @@ body::after {
     <div class="stat-grid" style="margin-bottom:14px">
       <div class="stat">
         <div class="stat-label">Most Productive</div>
-        <div class="stat-num" id="timingProductive">—</div>
+        <div class="stat-num timing-num-green" id="timingProductive">—</div>
         <div class="timing-sub" id="timingProductiveSub">—</div>
       </div>
       <div class="stat">
         <div class="stat-label">You'll Crash</div>
-        <div class="stat-num" id="timingCrash">—</div>
+        <div class="stat-num timing-num-amber" id="timingCrash">—</div>
         <div class="timing-sub" id="timingCrashSub">—</div>
       </div>
       <div class="stat">
         <div class="stat-label">Coffee Cutoff</div>
-        <div class="stat-num" id="timingCutoff">—</div>
+        <div class="stat-num timing-num-blue" id="timingCutoff">—</div>
         <div class="timing-sub" id="timingCutoffSub">—</div>
       </div>
     </div>
@@ -686,9 +685,9 @@ body::after {
     var cls = scoreClass(score);
     fillEl.setAttribute('class', 'day-ring-fill ' + cls);
     $('dayRingNum').textContent = Math.round(score);
-    var stateEl = $('dayRingState');
+    var stateEl = $('dayHeaderState');
     stateEl.textContent = scoreState(score);
-    stateEl.className = 'day-ring-state ' + cls;
+    stateEl.className = 'day-header-state ' + cls;
   }
 
   function valueAtHour(hour) {
@@ -701,7 +700,8 @@ body::after {
     var isLive = (scrubHour === null);
     var pt = valueAtHour(hour);
     renderRing(pt.total);
-    $('dayHeaderLabel').textContent = isLive ? 'RIGHT NOW' : fmtTime12(hour).toUpperCase();
+    var prefix = isLive ? 'RIGHT NOW · ' : '';
+    $('dayHeaderLabel').textContent = prefix + 'AT ' + fmtTime12(hour).toUpperCase();
   }
 
   function renderChart() {
@@ -894,8 +894,8 @@ body::after {
   function renderSmartTiming() {
     var prod = findProductiveWindow();
     if (prod) {
-      $('timingProductive').textContent = 'in ' + hoursUntilLabel(prod.peakT);
-      $('timingProductiveSub').textContent = 'Peaks ' + fmtTime12(prod.peakT) + ' · window ' + fmtTime12(prod.startT) + '–' + fmtTime12(prod.endT);
+      $('timingProductive').textContent = fmtTime12(prod.peakT);
+      $('timingProductiveSub').textContent = 'Energy ~' + Math.round(prod.score) + '/100 · window ' + fmtTime12(prod.startT) + '–' + fmtTime12(prod.endT);
     } else {
       $('timingProductive').textContent = '—';
       $('timingProductiveSub').textContent = 'Not enough data yet';
@@ -903,25 +903,26 @@ body::after {
 
     var crash = findCrash();
     if (crash) {
-      $('timingCrash').textContent = 'in ' + hoursUntilLabel(crash.startT);
-      $('timingCrashSub').textContent = fmtTime12(crash.startT) + ' · drops to ~' + Math.round(crash.low);
+      $('timingCrash').textContent = fmtTime12(crash.startT);
+      $('timingCrashSub').textContent = 'Drops toward ~' + Math.round(crash.low) + '/100 — plan lighter work then.';
     } else {
       $('timingCrash').textContent = 'None';
       $('timingCrashSub').textContent = 'No significant crash predicted';
     }
 
     var cutoff = coffeeCutoffHour();
-    $('timingCutoff').textContent = 'in ' + hoursUntilLabel(cutoff);
-    $('timingCutoffSub').textContent = fmtTime12(cutoff) + ' · to stay under 30mg by bedtime (' + fmtTime12(garminCtx.bedtime) + ')';
+    $('timingCutoff').textContent = fmtTime12(cutoff);
+    $('timingCutoffSub').textContent = 'Last coffee to keep <30 mg by your ' + fmtTime12(garminCtx.bedtime) + ' bedtime.';
 
-    var bedtimeSrc = garminCtx.connected ? "your Garmin's" : "an assumed (11 PM)";
+    var bedtimeSrc = garminCtx.connected ? "your Garmin's" : "an assumed";
+    var firstCupHour = garminCtx.wake + 0.75;
     var tips = [];
-    tips.push('Front-load your caffeine earlier in the day — a dose after ' + fmtTime12(garminCtx.bedtime - 8) + ' is still meaningfully active at bedtime.');
-    tips.push('Cut off caffeine by ' + fmtTime12(cutoff) + ' to protect tonight’s sleep, based on ' + bedtimeSrc + ' bedtime of ' + fmtTime12(garminCtx.bedtime) + '.');
-    tips.push('Stay hydrated — caffeine is mildly diuretic, especially at higher doses.');
-    if (crash) tips.push('Beat the ' + fmtTime12(crash.startT) + ' dip with daylight or a short walk instead of another dose.');
+    tips.push('<span class="tip-icon">☀️</span>Front-load it. Caffeine works best 30–90 min after waking — aim for your first cup near ' + fmtTime12(firstCupHour) + '.');
+    tips.push('<span class="tip-icon">🌙</span>You can still have coffee until ~' + fmtTime12(cutoff) + ' without wrecking ' + bedtimeSrc + ' ' + fmtTime12(garminCtx.bedtime) + ' bedtime.');
+    if (crash) tips.push('<span class="tip-icon">⚡</span>Beat the ' + fmtTime12(crash.startT) + ' dip with 10 min of daylight + water instead of another coffee — you’ll avoid stacking a late crash.');
+    tips.push('<span class="tip-icon">💧</span>Drink a glass of water per caffeinated drink — dehydration mimics and worsens the crash.');
     if (garminCtx.bodyBattery != null && garminCtx.bodyBattery < 25) {
-      tips.push('Your Garmin Body Battery is low today (' + Math.round(garminCtx.bodyBattery) + ') — consider a lower caffeine ceiling and an earlier cutoff.');
+      tips.push('<span class="tip-icon">🔋</span>Your Garmin Body Battery is low today (' + Math.round(garminCtx.bodyBattery) + ') — consider a lower caffeine ceiling and an earlier cutoff.');
     }
     $('tipsList').innerHTML = tips.map(function (t) { return '<li>' + t + '</li>'; }).join('');
   }
