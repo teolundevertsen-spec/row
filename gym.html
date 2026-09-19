@@ -3001,9 +3001,51 @@ img, video, canvas, svg { max-width: 100%; }
         .from('progress-photos')
         .upload(filename, blob, { contentType: 'image/jpeg', upsert: false });
       if (error) return null;
-      const { data } = pcSupa.storage.from('progress-photos').getPublicUrl(filename);
-      return data ? data.publicUrl : null;
+      return filename; // storage path, not a public URL - the bucket is private
     } catch (e) { return null; }
+  }
+
+  // -------- Signed photo URLs --------
+  // The progress-photos bucket is private (authenticated-only RLS), so
+  // there's no permanent public URL any more - every <img> gets a
+  // short-lived signed URL fetched on demand, cached in memory only.
+  const PHOTO_SIGN_TTL_SEC = 3600;
+  const photoUrlCache = {}; // path -> { url, expiresAt }
+
+  function photoStoragePath(p) {
+    if (!p) return null;
+    if (p.path) return p.path;
+    // Back-compat: photos synced before the bucket went private stored a
+    // full public URL - extract the storage path out of it so old photos
+    // keep working under a signed URL instead.
+    if (p.url) {
+      const marker = '/progress-photos/';
+      const idx = p.url.indexOf(marker);
+      if (idx !== -1) return p.url.slice(idx + marker.length);
+    }
+    return null;
+  }
+
+  async function resolvePhotoSrc(p) {
+    const path = photoStoragePath(p);
+    if (!path) return p.dataUrl || '';
+    const cached = photoUrlCache[path];
+    if (cached && cached.expiresAt > Date.now() + 60000) return cached.url;
+    if (!pcSupa) return p.dataUrl || (cached ? cached.url : '');
+    try {
+      const { data, error } = await pcSupa.storage
+        .from('progress-photos')
+        .createSignedUrl(path, PHOTO_SIGN_TTL_SEC);
+      if (error || !data) return p.dataUrl || (cached ? cached.url : '');
+      photoUrlCache[path] = { url: data.signedUrl, expiresAt: Date.now() + PHOTO_SIGN_TTL_SEC * 1000 };
+      return data.signedUrl;
+    } catch (e) {
+      return p.dataUrl || (cached ? cached.url : '');
+    }
+  }
+
+  function hydratePhotoImg(imgEl, p) {
+    resolvePhotoSrc(p).then((src) => { if (src) imgEl.src = src; });
   }
   function photoFmtDate(key) {
     const d = wtParseKey(key);
@@ -3021,7 +3063,7 @@ img, video, canvas, svg { max-width: 100%; }
     } else {
       grid.innerHTML = photos.map(p =>
         '<button class="wt-photo-card" data-id="' + p.id + '" type="button">' +
-          '<img src="' + (p.url || p.dataUrl) + '" alt="">' +
+          '<img data-photo-id="' + p.id + '" src="' + (p.dataUrl || '') + '" alt="">' +
           '<div class="wt-photo-overlay"></div>' +
           '<div class="wt-photo-meta">' +
             '<span class="wt-photo-date">' + photoFmtDate(p.dateKey) + '</span>' +
@@ -3029,6 +3071,10 @@ img, video, canvas, svg { max-width: 100%; }
           '</div>' +
         '</button>'
       ).join('');
+      grid.querySelectorAll('img[data-photo-id]').forEach(img => {
+        const p = photos.find(x => x.id === img.dataset.photoId);
+        if (p) hydratePhotoImg(img, p);
+      });
       grid.querySelectorAll('.wt-photo-card').forEach(card => {
         card.addEventListener('click', () => openPhoto(card.dataset.id));
       });
@@ -3063,11 +3109,11 @@ img, video, canvas, svg { max-width: 100%; }
     }
     photosRender();
 
-    uploadPhotoToStorage(entry.dataUrl).then((url) => {
-      if (!url) return;
+    uploadPhotoToStorage(entry.dataUrl).then((path) => {
+      if (!path) return;
       const e = photos.find(p => p.id === id);
       if (!e) return;
-      e.url = url;
+      e.path = path;
       delete e.dataUrl;
       photosSave();
       photosRender();
@@ -3156,7 +3202,8 @@ img, video, canvas, svg { max-width: 100%; }
     const p = photos.find(x => x.id === id);
     if (!p) return;
     activePhotoId = id;
-    $('wtViewerImg').src = p.url || p.dataUrl;
+    $('wtViewerImg').src = p.dataUrl || '';
+    hydratePhotoImg($('wtViewerImg'), p);
     $('wtViewerDate').textContent = photoFmtDate(p.dateKey).toUpperCase();
     $('wtViewerWeight').textContent = p.weight || '—';
     $('wtViewer').dataset.mode = 'single';
@@ -3206,8 +3253,10 @@ img, video, canvas, svg { max-width: 100%; }
     if (!A || !B) return;
     activePhotoId = activeId;
     comparePhotoId = otherId;
-    $('wtCmpImgA').src = A.url || A.dataUrl;
-    $('wtCmpImgB').src = B.url || B.dataUrl;
+    $('wtCmpImgA').src = A.dataUrl || '';
+    $('wtCmpImgB').src = B.dataUrl || '';
+    hydratePhotoImg($('wtCmpImgA'), A);
+    hydratePhotoImg($('wtCmpImgB'), B);
     $('wtCmpMetaA').textContent = photoFmtDate(A.dateKey) + ' · ' + (A.weight || '—');
     $('wtCmpMetaB').textContent = photoFmtDate(B.dateKey) + ' · ' + (B.weight || '—');
     // Headline — date arrow + weight delta
@@ -3344,8 +3393,8 @@ img, video, canvas, svg { max-width: 100%; }
       try { val = JSON.parse(v); } catch { continue; }
       if (k === 'po_coach_photos' && Array.isArray(val)) {
         val = val
-          .filter((p) => p && p.url)
-          .map((p) => ({ id: p.id, url: p.url, dateKey: p.dateKey, weight: p.weight }));
+          .filter((p) => p && (p.path || p.url))
+          .map((p) => ({ id: p.id, path: photoStoragePath(p), dateKey: p.dateKey, weight: p.weight }));
       }
       out[k] = val;
     }
@@ -3387,7 +3436,7 @@ img, video, canvas, svg { max-width: 100%; }
           try { localPhotos = JSON.parse(localStorage.getItem(k) || '[]'); } catch {}
           const remotePhotos = Array.isArray(remote[k]) ? remote[k] : [];
           const remoteIds = new Set(remotePhotos.map((p) => p && p.id));
-          const localOnly = localPhotos.filter((p) => p && !p.url && !remoteIds.has(p.id));
+          const localOnly = localPhotos.filter((p) => p && !p.path && !p.url && !remoteIds.has(p.id));
           const merged = [...remotePhotos, ...localOnly];
           const incoming = JSON.stringify(merged);
           if (localStorage.getItem(k) !== incoming) {

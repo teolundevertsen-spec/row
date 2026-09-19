@@ -29,28 +29,7 @@ Each app stores its own state in browser `localStorage`. No accounts, no server 
 
 ## Cloud sync setup (optional)
 
-To sync data (and gym progress photos) across devices, create a free [Supabase](https://supabase.com) project, paste its Project URL + publishable key into `topbar.js`, `sync.js`, and `gym.html`, then run this in the Supabase SQL Editor to set up Storage for progress photos:
-
-```sql
-insert into storage.buckets (id, name, public)
-values ('progress-photos', 'progress-photos', true)
-on conflict (id) do update set public = true;
-
-drop policy if exists "anon upload progress-photos" on storage.objects;
-drop policy if exists "anon read progress-photos"   on storage.objects;
-drop policy if exists "anon delete progress-photos" on storage.objects;
-
-create policy "anon upload progress-photos"
-  on storage.objects for insert with check (bucket_id = 'progress-photos');
-
-create policy "anon read progress-photos"
-  on storage.objects for select using (bucket_id = 'progress-photos');
-
-create policy "anon delete progress-photos"
-  on storage.objects for delete using (bucket_id = 'progress-photos');
-```
-
-You'll also need a `public.app_state` table (key text primary key, data jsonb, updated_at timestamptz) — see **Login / access control** below for the RLS policies, since access is restricted to a logged-in user rather than left open to `anon`.
+To sync data (and gym progress photos) across devices, create a free [Supabase](https://supabase.com) project and paste its Project URL + publishable key into `topbar.js`, `sync.js`, and `gym.html`. You'll need a `public.app_state` table (key text primary key, data jsonb, updated_at timestamptz) and a private Storage bucket for progress photos — see **Login / access control** below for the full setup SQL, since both are locked to a logged-in user rather than left open to `anon`.
 
 ## Login / access control
 
@@ -78,9 +57,25 @@ Setup, in order (**do this before relying on the login screen** — until you've
    create policy "authenticated update app_state"
      on public.app_state for update to authenticated using (true) with check (true);
    ```
-4. Once logged in on a device, the session persists (localStorage) across every page on the dashboard — you only log in once per browser.
+4. Same for gym progress photos — make the bucket private and restrict its policies to `authenticated` too (a public bucket serves files via their public URL regardless of `storage.objects` RLS, so `public = false` is what actually matters here, not just the policies):
+   ```sql
+   insert into storage.buckets (id, name, public)
+   values ('progress-photos', 'progress-photos', false)
+   on conflict (id) do update set public = false;
 
-**Known gap:** gym progress photos (`storage.objects`, bucket `progress-photos`) are still on a public bucket with `anon` policies from the Cloud sync setup section above — they weren't locked down in this pass. The bucket's `public: true` flag means files are reachable via their public URL regardless of `storage.objects` RLS, so properly closing this off would mean switching the bucket to private and `gym.html` to signed URLs instead of `getPublicUrl()`.
+   drop policy if exists "anon upload progress-photos" on storage.objects;
+   drop policy if exists "anon read progress-photos"   on storage.objects;
+   drop policy if exists "anon delete progress-photos" on storage.objects;
+
+   create policy "authenticated upload progress-photos"
+     on storage.objects for insert to authenticated with check (bucket_id = 'progress-photos');
+   create policy "authenticated read progress-photos"
+     on storage.objects for select to authenticated using (bucket_id = 'progress-photos');
+   create policy "authenticated delete progress-photos"
+     on storage.objects for delete to authenticated using (bucket_id = 'progress-photos');
+   ```
+   `gym.html` fetches a short-lived signed URL for each photo on demand instead of a permanent public one, so this only works once you're logged in.
+5. Once logged in on a device, the session persists (localStorage) across every page on the dashboard — you only log in once per browser.
 
 ## Garmin sync setup (optional)
 
