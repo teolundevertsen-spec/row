@@ -78,8 +78,23 @@
       const json = JSON.stringify(state);
       if (json === lastSyncedJson) return;
       try {
+        // Merge onto whatever's currently on the server for this row
+        // instead of blindly replacing it. Multiple pages can share one
+        // appKey with DIFFERENT syncedKeys (e.g. po-water.html standalone
+        // only tracks po_water_v1, while health.html also tracks
+        // stack:items under the same 'health' row) - a naive upsert from
+        // the narrower page would silently wipe out the other page's
+        // keys. Own keys still fully overwrite (deletions take effect);
+        // only keys this page doesn't track are preserved from remote.
+        let merged = state;
+        try {
+          const { data: existing } = await supa.from('app_state').select('data').eq('key', appKey).maybeSingle();
+          if (existing && existing.data && typeof existing.data === 'object') {
+            merged = Object.assign({}, existing.data, state);
+          }
+        } catch (e) {}
         const { error } = await supa.from('app_state').upsert(
-          { key: appKey, data: state, updated_at: new Date().toISOString() },
+          { key: appKey, data: merged, updated_at: new Date().toISOString() },
           { onConflict: 'key' }
         );
         if (!error) lastSyncedJson = json;
