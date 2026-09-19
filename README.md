@@ -14,7 +14,8 @@ Open any `.html` file directly in your browser — no build step, no install.
 
 | File | What it is |
 |---|---|
-| [index.html](index.html) | Goals tracker (Day Ring, Goal Ticker, To Do list) — the home page |
+| [index.html](index.html) | Bento grid hub — the home page, links out to every tracker |
+| [main.html](main.html) | Goals tracker (Day Ring, Goal Ticker, To Do list) |
 | [health.html](health.html) | Supplement / daily stack tracker |
 | [po-water.html](po-water.html) | Water intake tracker |
 | [finance.html](finance.html) | Finances |
@@ -50,4 +51,4 @@ You'll also need a `public.app_state` table (key text primary key, data jsonb, u
 
 ## Building from scratch
 
-[BUILD_DASHBOARD.md](BUILD_DASHBOARD.md) is the prompt I gave Claude to generate `index.html` — paste it into Claude if you want to rebuild that page yourself.
+[BUILD_DASHBOARD.md](BUILD_DASHBOARD.md) is the prompt I gave Claude to generate `main.html` (the goals tracker) — paste it into Claude if you want to rebuild that page yourself.
