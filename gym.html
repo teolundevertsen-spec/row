@@ -426,6 +426,16 @@ img, video, canvas, svg { max-width: 100%; }
   color: #0a0a0b; border-color: transparent;
   font-weight: 800;
 }
+.po-reps-custom {
+  margin-top: 6px; width: 100%; box-sizing: border-box;
+  padding: 10px 12px; border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28); color: var(--text-1);
+  border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600;
+  font-variant-numeric: tabular-nums; outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.po-reps-custom::placeholder { color: var(--text-3); font-weight: 500; }
+.po-reps-custom:focus { border-color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.4); }
 
 /* ----- Primary button ----- */
 .po-btn-primary {
@@ -1499,6 +1509,7 @@ img, video, canvas, svg { max-width: 100%; }
             <button type="button" class="po-reps-pill" data-v="11">11</button>
             <button type="button" class="po-reps-pill" data-v="12">12</button>
           </div>
+          <input type="number" id="repsCustom" class="po-reps-custom" placeholder="Or type any rep count" inputmode="numeric" min="1" step="1">
         </div>
       </div>
       <button class="po-btn-primary" id="logBtn">Log set</button>
@@ -2043,10 +2054,11 @@ img, video, canvas, svg { max-width: 100%; }
     const upper = Math.max(repMax + 2, repMin + 5);
     const end = Math.min(upper, repMin + 15);
 
-    // Preserve the previously-selected rep if it still fits in the new
-    // range; otherwise default to the target (repMax).
+    // Preserve the previously-selected rep if it's still a sane value for
+    // this exercise (>= repMin) - including a custom-typed number above
+    // the pill range, so re-renders don't silently discard it.
     const prev = parseInt(row.dataset.value, 10);
-    const active = (prev >= repMin && prev <= end) ? prev : repMax;
+    const active = (prev >= repMin) ? prev : repMax;
 
     let html = '';
     for (let i = repMin; i <= end; i++) {
@@ -2056,6 +2068,9 @@ img, video, canvas, svg { max-width: 100%; }
     }
     row.innerHTML = html;
     row.dataset.value = String(active);
+
+    const customEl = document.getElementById('repsCustom');
+    if (customEl) customEl.value = (active > end) ? String(active) : '';
   }
 
   function renderAll() {
@@ -2271,6 +2286,16 @@ img, video, canvas, svg { max-width: 100%; }
     $('repsRow').querySelectorAll('.po-reps-pill').forEach(x => x.classList.remove('active'));
     p.classList.add('active');
     $('repsRow').dataset.value = p.dataset.v;
+    $('repsCustom').value = '';
+  });
+  // Free-text rep entry, for exercises where you go past the quick-pick
+  // pills (e.g. 20+ pull-ups) - typing here is the source of truth for
+  // reps until a pill is tapped again.
+  $('repsCustom').addEventListener('input', (e) => {
+    const v = parseInt(e.target.value, 10);
+    if (!v || v <= 0) return;
+    $('repsRow').querySelectorAll('.po-reps-pill').forEach(x => x.classList.remove('active'));
+    $('repsRow').dataset.value = String(v);
   });
   $('logBtn').addEventListener('click', () => {
     const ex = getCurrentEx();
