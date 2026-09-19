@@ -95,7 +95,8 @@ def fetch_garmin_data():
         except Exception as e:
             out['rhrError'] = str(e)
 
-    # --- sleep ---
+    # --- sleep (duration/score, plus start/end for the caffeine page's
+    # wake/bedtime-aware energy model) ---
     try:
         sleep = client.get_sleep_data(today) or {}
         dto = sleep.get('dailySleepDTO') or {}
@@ -103,6 +104,16 @@ def fetch_garmin_data():
         out['sleepHours'] = round(total_seconds / 3600, 1) if total_seconds else None
         overall = (dto.get('sleepScores') or {}).get('overall') or {}
         out['sleepScore'] = overall.get('value')
+
+        # Garmin's "...Local" timestamps are epoch-ms that decode to the
+        # correct local wall-clock time when read as UTC (no separate
+        # timezone field needed) - a quirk of their API, not a bug here.
+        start_ms = dto.get('sleepStartTimestampLocal') or dto.get('sleepStartTimestampGMT')
+        end_ms = dto.get('sleepEndTimestampLocal') or dto.get('sleepEndTimestampGMT')
+        if start_ms:
+            out['sleepStart'] = datetime.datetime.utcfromtimestamp(start_ms / 1000).isoformat() + 'Z'
+        if end_ms:
+            out['sleepEnd'] = datetime.datetime.utcfromtimestamp(end_ms / 1000).isoformat() + 'Z'
     except Exception as e:
         out['sleepError'] = str(e)
 

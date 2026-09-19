@@ -487,7 +487,8 @@ body::after {
   var LOG_KEY = 'caf:logs';
   var CUSTOM_KEY = 'caf:custom';
   var WATER_KEY = 'po_water_v1';
-  var WHOOP_TOKENS_KEY = 'whoop_tokens_v1';
+  var SUPABASE_URL = 'https://qigzwmiypboijszfrhkm.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_EAe3cddNpZ8vdw17a8kl0w_zDu9CfDb';
 
   var HALF_LIFE_H = 5;
   var PEAK_DELAY_MIN = 45;
@@ -586,7 +587,7 @@ body::after {
   // Energy model
   // ---------------------------------------------------------------
   var profileWeightKg = null;
-  var whoopCtx = { wake: 7, bedtime: 23, recovery: null };
+  var garminCtx = { wake: 7, bedtime: 23, bodyBattery: null };
 
   function gaussian(x, mu, sd) { var d = (x - mu) / sd; return Math.exp(-0.5 * d * d); }
   function circadian(t) { return 50 + 18 * Math.cos(2 * Math.PI * (t - 16.5) / 24); }
@@ -604,7 +605,7 @@ body::after {
   }
   function energyAt(t, entries, opts) {
     opts = opts || {};
-    var wake = whoopCtx.wake, bedtime = whoopCtx.bedtime;
+    var wake = garminCtx.wake, bedtime = garminCtx.bedtime;
     var activeMg = opts.noCaffeine ? 0 : totalActiveAtHour(entries, t);
     if (isAsleep(t, wake, bedtime)) {
       return clamp(circadian(t) - 34, 3, 20);
@@ -658,6 +659,7 @@ body::after {
   }
 
   function valueAtHour(hour) {
+    if (!dayPoints.length) return { t: hour, total: 50, base: 50 };
     var idx = clamp(Math.round(hour / (24 / 144)), 0, dayPoints.length - 1);
     return dayPoints[idx];
   }
@@ -678,7 +680,7 @@ body::after {
     function xFor(t) { return t * pxPerHour; }
     function yFor(v) { return padTop + plotH - (clamp(v, 0, 100) / 100) * plotH; }
 
-    var wake = whoopCtx.wake, bedtime = whoopCtx.bedtime;
+    var wake = garminCtx.wake, bedtime = garminCtx.bedtime;
     var nightRects = '';
     if (wake > 0) nightRects += '<rect x="0" y="0" width="' + xFor(wake) + '" height="' + H + '" fill="rgba(255,255,255,0.025)"></rect>';
     if (bedtime < 24) nightRects += '<rect x="' + xFor(bedtime) + '" y="0" width="' + (W - xFor(bedtime)) + '" height="' + H + '" fill="rgba(255,255,255,0.025)"></rect>';
@@ -794,14 +796,14 @@ body::after {
     var wakeIdx = 0, bedIdx = dayPoints.length - 1;
     var best = null;
     dayPoints.forEach(function (p, i) {
-      if (isAsleep(p.t, whoopCtx.wake, whoopCtx.bedtime)) return;
+      if (isAsleep(p.t, garminCtx.wake, garminCtx.bedtime)) return;
       if (!best || p.total > best.total) best = { t: p.t, total: p.total, i: i };
     });
     if (!best) return null;
     var threshold = best.total * 0.9;
     var startT = best.t, endT = best.t;
-    for (var i = best.i; i >= 0 && dayPoints[i].total >= threshold && !isAsleep(dayPoints[i].t, whoopCtx.wake, whoopCtx.bedtime); i--) startT = dayPoints[i].t;
-    for (var j = best.i; j < dayPoints.length && dayPoints[j].total >= threshold && !isAsleep(dayPoints[j].t, whoopCtx.wake, whoopCtx.bedtime); j++) endT = dayPoints[j].t;
+    for (var i = best.i; i >= 0 && dayPoints[i].total >= threshold && !isAsleep(dayPoints[i].t, garminCtx.wake, garminCtx.bedtime); i--) startT = dayPoints[i].t;
+    for (var j = best.i; j < dayPoints.length && dayPoints[j].total >= threshold && !isAsleep(dayPoints[j].t, garminCtx.wake, garminCtx.bedtime); j++) endT = dayPoints[j].t;
     return { peakT: best.t, score: best.total, startT: startT, endT: endT };
   }
 
@@ -823,7 +825,7 @@ body::after {
   }
 
   function coffeeCutoffHour() {
-    return whoopCtx.bedtime - HALF_LIFE_H * Math.log2(95 / 30);
+    return garminCtx.bedtime - HALF_LIFE_H * Math.log2(95 / 30);
   }
 
   function renderFooterBand() {
@@ -855,15 +857,15 @@ body::after {
 
     var cutoff = coffeeCutoffHour();
     $('timingCutoff').textContent = fmtTime12(cutoff);
-    $('timingCutoffSub').textContent = 'To stay under 30mg by bedtime (' + fmtTime12(whoopCtx.bedtime) + ')';
+    $('timingCutoffSub').textContent = 'To stay under 30mg by bedtime (' + fmtTime12(garminCtx.bedtime) + ')';
 
     var tips = [];
-    tips.push('Front-load your caffeine earlier in the day — a dose after ' + fmtTime12(whoopCtx.bedtime - 8) + ' is still meaningfully active at bedtime.');
-    tips.push('Cut off caffeine by ' + fmtTime12(cutoff) + ' to protect tonight’s sleep (bedtime ' + fmtTime12(whoopCtx.bedtime) + ').');
+    tips.push('Front-load your caffeine earlier in the day — a dose after ' + fmtTime12(garminCtx.bedtime - 8) + ' is still meaningfully active at bedtime.');
+    tips.push('Cut off caffeine by ' + fmtTime12(cutoff) + ' to protect tonight’s sleep (bedtime ' + fmtTime12(garminCtx.bedtime) + ').');
     tips.push('Stay hydrated — caffeine is mildly diuretic, especially at higher doses.');
     if (crash) tips.push('Beat the ' + fmtTime12(crash.startT) + ' dip with daylight or a short walk instead of another dose.');
-    if (whoopCtx.recovery != null && whoopCtx.recovery < 34) {
-      tips.push('Your WHOOP recovery is low today (' + Math.round(whoopCtx.recovery) + '%) — consider a lower caffeine ceiling and an earlier cutoff.');
+    if (garminCtx.bodyBattery != null && garminCtx.bodyBattery < 25) {
+      tips.push('Your Garmin Body Battery is low today (' + Math.round(garminCtx.bodyBattery) + ') — consider a lower caffeine ceiling and an earlier cutoff.');
     }
     $('tipsList').innerHTML = tips.map(function (t) { return '<li>' + t + '</li>'; }).join('');
   }
@@ -874,9 +876,9 @@ body::after {
   function dailyLimitMg() {
     var base = DAILY_CEILING_MG;
     if (profileWeightKg) base = Math.min(DAILY_CEILING_MG, Math.round(profileWeightKg * 3));
-    if (whoopCtx.recovery != null) {
-      if (whoopCtx.recovery < 34) return Math.min(base, 200);
-      if (whoopCtx.recovery < 67) return Math.min(base, 300);
+    if (garminCtx.bodyBattery != null) {
+      if (garminCtx.bodyBattery < 25) return Math.min(base, 200);
+      if (garminCtx.bodyBattery < 50) return Math.min(base, 300);
     }
     return base;
   }
@@ -1065,7 +1067,7 @@ body::after {
   });
 
   // ---------------------------------------------------------------
-  // Data sources: body weight + WHOOP (both degrade gracefully)
+  // Data sources: body weight + Garmin (both degrade gracefully)
   // ---------------------------------------------------------------
   function loadWeightKg() {
     try {
@@ -1078,55 +1080,29 @@ body::after {
     return null;
   }
 
-  function loadWhoopTokens() {
-    try { return JSON.parse(localStorage.getItem(WHOOP_TOKENS_KEY)); } catch (e) { return null; }
-  }
-  function saveWhoopTokens(t) { try { localStorage.setItem(WHOOP_TOKENS_KEY, JSON.stringify(t)); } catch (e) {} }
-
-  async function refreshWhoopToken(refreshToken) {
+  // Garmin data already flows in hourly via api/garmin-sync.py into the
+  // same app_state table (key='garmin') that health.html's Vitals card
+  // reads - this just reads it too, through the authenticated Supabase
+  // client so it works under app_state's authenticated-only RLS. If the
+  // sync hasn't run yet, or you haven't set up Garmin sync at all, this
+  // just stays at the defaults.
+  async function loadGarminContext() {
+    var ctx = { wake: 7, bedtime: 23, bodyBattery: null };
+    if (!window.supabase) return ctx;
     try {
-      var res = await fetch('/api/whoop-refresh', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken })
-      });
-      if (!res.ok) return null;
-      var data = await res.json();
-      if (!data.access_token) return null;
-      saveWhoopTokens(data);
-      return data;
-    } catch (e) { return null; }
-  }
-
-  async function whoopFetch(type) {
-    var tokens = loadWhoopTokens();
-    if (!tokens || !tokens.access_token) return null;
-    try {
-      var res = await fetch('/api/whoop-data?type=' + type, { headers: { Authorization: 'Bearer ' + tokens.access_token } });
-      if (res.status === 401 && tokens.refresh_token) {
-        var refreshed = await refreshWhoopToken(tokens.refresh_token);
-        if (!refreshed) return null;
-        res = await fetch('/api/whoop-data?type=' + type, { headers: { Authorization: 'Bearer ' + refreshed.access_token } });
-      }
-      if (!res.ok) return null;
-      return await res.json();
-    } catch (e) { return null; }
-  }
-
-  async function loadWhoopContext() {
-    var ctx = { wake: 7, bedtime: 23, recovery: null };
-    if (!loadWhoopTokens()) return ctx;
-    try {
-      var results = await Promise.all([whoopFetch('recovery'), whoopFetch('sleep')]);
-      var recoveryData = results[0], sleepData = results[1];
-      if (recoveryData && Array.isArray(recoveryData.records) && recoveryData.records[0]) {
-        var rec = recoveryData.records[0];
-        if (rec.score && typeof rec.score.recovery_score === 'number') ctx.recovery = rec.score.recovery_score;
-      }
-      if (sleepData && Array.isArray(sleepData.records) && sleepData.records[0]) {
-        var sleep = sleepData.records[0];
-        if (sleep.end) { var wd = new Date(sleep.end); ctx.wake = wd.getHours() + wd.getMinutes() / 60; }
-        if (sleep.start) { var bd = new Date(sleep.start); ctx.bedtime = bd.getHours() + bd.getMinutes() / 60; }
-      }
+      var supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      var query = supa.from('app_state').select('data').eq('key', 'garmin').maybeSingle();
+      // supabase-js can hang rather than reject when the network call
+      // never resolves (flaky connection, etc) - this is an optional,
+      // degrade-gracefully data source, so never let it stall the page's
+      // actual rendering past a few seconds.
+      var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(null); }, 4000); });
+      var res = await Promise.race([query, timeout]);
+      var d = res && res.data && res.data.data;
+      if (!d) return ctx;
+      if (typeof d.bodyBattery === 'number') ctx.bodyBattery = d.bodyBattery;
+      if (d.sleepEnd) { var wd = new Date(d.sleepEnd); ctx.wake = wd.getUTCHours() + wd.getUTCMinutes() / 60; }
+      if (d.sleepStart) { var bd = new Date(d.sleepStart); ctx.bedtime = bd.getUTCHours() + bd.getUTCMinutes() / 60; }
     } catch (e) {}
     return ctx;
   }
@@ -1142,12 +1118,14 @@ body::after {
 
   async function boot() {
     profileWeightKg = loadWeightKg();
-    whoopCtx = await loadWhoopContext();
     attachChartScrub();
-    renderAll();
+    renderAll(); // immediate render with default wake/bedtime so the UI is never blocked on a network call
     setInterval(function () { if (scrubHour === null) renderAll(); }, 60 * 1000);
     window.addEventListener('storage', renderAll);
     window.addEventListener('focus', renderAll);
+
+    garminCtx = await loadGarminContext();
+    renderAll(); // refine once Garmin's wake/bedtime/body battery are in (or the fetch timed out)
   }
   boot();
 

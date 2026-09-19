@@ -79,7 +79,7 @@ Setup, in order (**do this before relying on the login screen** — until you've
 
 ## Garmin sync setup (optional)
 
-[api/garmin-sync.py](api/garmin-sync.py) is a Vercel Python serverless function that logs into Garmin Connect and writes resting heart rate, body battery and sleep into the `garmin` row of the same `app_state` table — [health.html](health.html)'s "Vitals" card reads it from there.
+[api/garmin-sync.py](api/garmin-sync.py) is a Vercel Python serverless function that logs into Garmin Connect and writes resting heart rate, body battery, sleep duration/score and sleep start/end into the `garmin` row of the same `app_state` table. [health.html](health.html)'s "Vitals" card reads the headline numbers from there, and [caffeine.html](caffeine.html)'s energy-curve model reads it too — sleep start/end become your actual bedtime/wake time (instead of the 7:00/23:00 defaults) and Body Battery lowers the daily caffeine ceiling when it's low (<25 → 200mg, <50 → 300mg). Both reads go through the authenticated Supabase client with a 4-second timeout race, so a slow/broken connection can never block the page — it just falls back to the defaults.
 
 It uses the unofficial [`garminconnect`](https://pypi.org/project/garminconnect/) library (there's no realistic path to Garmin's official Developer API for a personal project — that requires business approval). To turn it on:
 
@@ -92,14 +92,6 @@ It uses the unofficial [`garminconnect`](https://pypi.org/project/garminconnect/
 3. **Scheduling**: Vercel's free Hobby plan only allows cron jobs to run once a day, so [.github/workflows/garmin-sync.yml](.github/workflows/garmin-sync.yml) runs it hourly instead, via GitHub Actions hitting the same endpoint. Add a repository secret (GitHub repo → Settings → Secrets and variables → Actions → New repository secret) named `CRON_SECRET` with the same value as the Vercel one. You can also trigger it manually anytime from the repo's Actions tab ("Garmin hourly sync" → Run workflow), or with `curl -L -H "Authorization: Bearer <your CRON_SECRET>" https://<your-app>.vercel.app/api/garmin-sync`.
 
 **Note on credentials:** never put your Garmin email/password (or the Supabase service_role key) anywhere in this repo — Vercel env vars are the only place they should live. The function deliberately re-logs-in to Garmin every run instead of caching a session token in Supabase, to avoid adding another sensitive value to persist and protect.
-
-## WHOOP integration (optional)
-
-[caffeine.html](caffeine.html)'s energy-curve model can use your actual wake/bedtime and recovery score from WHOOP instead of the defaults (wake 7:00, bedtime 23:00) — this is entirely optional and degrades gracefully: with no WHOOP tokens present, the page just uses the defaults.
-
-- The page reads a `whoop_tokens_v1` localStorage key (`{access_token, refresh_token}`) and calls [api/whoop-data.py](api/whoop-data.py) for `/v2/recovery` and `/v2/activity/sleep`, refreshing through [api/whoop-refresh.py](api/whoop-refresh.py) on a 401.
-- This repo doesn't include a "Connect WHOOP" OAuth flow yet — nothing populates `whoop_tokens_v1` on its own. To wire that up you'd register an app at [developer.whoop.com](https://developer.whoop.com), add a login button that redirects through WHOOP's OAuth authorize URL with the `offline` scope, and on the callback exchange the code for tokens (via `https://api.prod.whoop.com/oauth/oauth2/token`) and save the result into `whoop_tokens_v1`.
-- `api/whoop-refresh.py` needs `WHOOP_CLIENT_ID` / `WHOOP_CLIENT_SECRET` as Vercel env vars (from your WHOOP developer app) — **never** put the client secret in any client-side file. `api/whoop-data.py` needs no secrets of its own; it just forwards your own access token to WHOOP's API to avoid a browser-side CORS/credential-exposure issue.
 
 ## Building from scratch
 
