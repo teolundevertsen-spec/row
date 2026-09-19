@@ -1,0 +1,21 @@
+name: Garmin hourly sync
+
+# Vercel's free "Hobby" plan only allows cron jobs to run once a day, so
+# this workflow triggers the same /api/garmin-sync endpoint hourly
+# instead. Requires a repo secret named CRON_SECRET with the exact same
+# value as the CRON_SECRET Vercel environment variable.
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Garmin sync
+        run: |
+          curl -sf -L \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://row-ro-w23.vercel.app/api/garmin-sync

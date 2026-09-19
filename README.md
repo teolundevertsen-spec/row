@@ -84,18 +84,19 @@ Setup, in order (**do this before relying on the login screen** — until you've
 
 ## Garmin sync setup (optional)
 
-[api/garmin-sync.py](api/garmin-sync.py) is a Vercel Python serverless function that logs into Garmin Connect once a day (via [vercel.json](vercel.json)'s cron config) and writes resting heart rate, body battery and sleep into the `garmin` row of the same `app_state` table — [health.html](health.html)'s "Vitals" card reads it from there.
+[api/garmin-sync.py](api/garmin-sync.py) is a Vercel Python serverless function that logs into Garmin Connect and writes resting heart rate, body battery and sleep into the `garmin` row of the same `app_state` table — [health.html](health.html)'s "Vitals" card reads it from there.
 
 It uses the unofficial [`garminconnect`](https://pypi.org/project/garminconnect/) library (there's no realistic path to Garmin's official Developer API for a personal project — that requires business approval). To turn it on:
 
-1. In your Vercel project → **Settings → Environment Variables**, add:
+1. In your Vercel project's **Environment Variables**, add:
    - `GARMIN_EMAIL` — your Garmin Connect login email
    - `GARMIN_PASSWORD` — your Garmin Connect login password
-   - `CRON_SECRET` — any random string (Vercel automatically sends this back as a bearer token when it triggers the cron job, so the public function URL can't be used by randoms to trigger a Garmin login)
-2. Redeploy. The cron in `vercel.json` runs daily at 09:00 UTC — edit the schedule string if you want a different time.
-3. To test it immediately rather than waiting for the cron, visit `https://<your-app>.vercel.app/api/garmin-sync` with an `Authorization: Bearer <your CRON_SECRET>` header (e.g. `curl -H "Authorization: Bearer <secret>" https://.../api/garmin-sync`).
+   - `CRON_SECRET` — any random string (checked against the `Authorization: Bearer` header on every call, so the public function URL can't be used by randoms to trigger a Garmin login)
+   - `SUPABASE_SERVICE_ROLE_KEY` — your project's secret/service_role key (Supabase → Project Settings → API Keys → "Secret keys"). The function has no user session of its own, so it needs this to write past `app_state`'s `authenticated`-only RLS policies. **Never** put this key in any client-side file.
+2. Redeploy.
+3. **Scheduling**: Vercel's free Hobby plan only allows cron jobs to run once a day, so [.github/workflows/garmin-sync.yml](.github/workflows/garmin-sync.yml) runs it hourly instead, via GitHub Actions hitting the same endpoint. Add a repository secret (GitHub repo → Settings → Secrets and variables → Actions → New repository secret) named `CRON_SECRET` with the same value as the Vercel one. You can also trigger it manually anytime from the repo's Actions tab ("Garmin hourly sync" → Run workflow), or with `curl -L -H "Authorization: Bearer <your CRON_SECRET>" https://<your-app>.vercel.app/api/garmin-sync`.
 
-**Note on credentials:** never put your Garmin email/password anywhere in this repo — Vercel env vars are the only place they should live. The function deliberately re-logs-in every run instead of caching a session token in Supabase, to avoid adding another sensitive value to that table even though it's now locked to `authenticated` access (see **Login / access control** above).
+**Note on credentials:** never put your Garmin email/password (or the Supabase service_role key) anywhere in this repo — Vercel env vars are the only place they should live. The function deliberately re-logs-in to Garmin every run instead of caching a session token in Supabase, to avoid adding another sensitive value to persist and protect.
 
 ## Building from scratch
 

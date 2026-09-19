@@ -1,5 +1,0 @@
-{
-  "crons": [
-    { "path": "/api/garmin-sync", "schedule": "0 9 * * *" }
-  ]
-}
