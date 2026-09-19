@@ -296,6 +296,25 @@ select.gm-input { cursor: pointer; }
     <div class="section-title">Songs You've Learned</div>
     <div class="gm-card">
       <ul class="goal-list" id="pnArchiveList"></ul>
+
+      <button class="gm-ghost" id="pnKnownToggle" type="button" style="margin-top:6px">+ Add a song you already know</button>
+      <div id="pnKnownForm" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06);">
+        <div class="pn-form-row">
+          <div class="pn-form-field" style="flex:1 1 55%">
+            <label for="pnKnownTitle">Title</label>
+            <input class="gm-input" id="pnKnownTitle" type="text" placeholder="e.g. River Flows in You">
+          </div>
+          <div class="pn-form-field" style="flex:1 1 30%">
+            <label for="pnKnownArtist">Artist / composer</label>
+            <input class="gm-input" id="pnKnownArtist" type="text" placeholder="Optional">
+          </div>
+          <div class="pn-form-field" style="flex:1 1 auto">
+            <label for="pnKnownDate">Date learned</label>
+            <input class="gm-input" id="pnKnownDate" type="date">
+          </div>
+        </div>
+        <button class="gm-add" id="pnKnownSave" type="button">Add to Repertoire</button>
+      </div>
     </div>
   </div>
 
@@ -385,6 +404,12 @@ select.gm-input { cursor: pointer; }
   }
   function songProgress(song) {
     var sessions = songSessions(song.id);
+    // Songs added straight to the repertoire (already known, no practice
+    // goal set) have no target to divide by - report raw counts only.
+    if (!song.goalTarget) {
+      var minsNoGoal = sessions.reduce(function (s, x) { return s + (Number(x.minutes) || 0); }, 0);
+      return { done: sessions.length, goal: null, pct: null, unit: 'sessions', minutes: minsNoGoal };
+    }
     if (song.goalType === 'minutes') {
       var mins = sessions.reduce(function (s, x) { return s + (Number(x.minutes) || 0); }, 0);
       return { done: mins, goal: song.goalTarget, pct: Math.min(100, (mins / song.goalTarget) * 100), unit: 'min' };
@@ -471,7 +496,7 @@ select.gm-input { cursor: pointer; }
     var songs = loadSongs().filter(function (s) { return s.completed; })
       .sort(function (a, b) { return (b.completedDate || '').localeCompare(a.completedDate || ''); });
     if (!songs.length) {
-      listEl.innerHTML = '<li class="empty-state">Nothing learned yet — finish a song to see it here.</li>';
+      listEl.innerHTML = '<li class="empty-state">No songs yet — finish an active song, or add one you already know below.</li>';
       return;
     }
     listEl.innerHTML = '';
@@ -483,7 +508,8 @@ select.gm-input { cursor: pointer; }
         '<span class="pn-archive-icon">🎹</span>' +
         '<div class="pn-archive-body">' +
           '<div class="pn-archive-title">' + escapeHtml(song.title) + (song.artist ? ' <span style="color:var(--text-tertiary);font-weight:400">· ' + escapeHtml(song.artist) + '</span>' : '') + '</div>' +
-          '<div class="pn-archive-meta">Learned ' + (song.completedDate ? fmtShortDate(song.completedDate) : '') + ' · ' + prog.done + ' ' + prog.unit + '</div>' +
+          '<div class="pn-archive-meta">' + (song.completedDate ? 'Learned ' + fmtShortDate(song.completedDate) : 'In your repertoire') +
+            (prog.done > 0 ? ' · ' + prog.done + ' ' + prog.unit : '') + '</div>' +
         '</div>';
       listEl.appendChild(li);
     });
@@ -569,6 +595,29 @@ select.gm-input { cursor: pointer; }
     saveSongs(list);
     $('pnNewTitle').value = ''; $('pnNewArtist').value = ''; $('pnNewGoal').value = '';
     $('pnSongForm').style.display = 'none';
+    renderAll();
+  });
+
+  // --- add a song you already know (straight into the repertoire,
+  // no practice goal needed) ---------------------------------------
+  $('pnKnownToggle').addEventListener('click', function () {
+    var form = $('pnKnownForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  });
+  $('pnKnownSave').addEventListener('click', function () {
+    var title = $('pnKnownTitle').value.trim();
+    var artist = $('pnKnownArtist').value.trim();
+    var learnedDate = $('pnKnownDate').value || null;
+    if (!title) { alert('Enter a title.'); return; }
+    var list = loadSongs();
+    list.push({
+      id: 'sg' + Date.now() + '_' + Math.floor(Math.random() * 999),
+      title: title, artist: artist, goalType: null, goalTarget: null,
+      completed: true, completedDate: learnedDate, createdDate: todayKey()
+    });
+    saveSongs(list);
+    $('pnKnownTitle').value = ''; $('pnKnownArtist').value = ''; $('pnKnownDate').value = '';
+    $('pnKnownForm').style.display = 'none';
     renderAll();
   });
 
